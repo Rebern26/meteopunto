@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeteoPunto.com - Previsioni Meteo in Tempo Reale</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- SPAZIO PUBBLICITARIO ALTO (BANNER RECTANGLE/LEADERBOARD) -->
+    <div class="ads-container top-ads">
+        <span>Spazio Pubblicitario</span>
+        <!-- Qui in futuro incollerai il codice di Google AdSense -->
+    </div>
+
+    <div class="weather-container">
+        <h1>MeteoPunto</h1>
+        
+        <div class="search-box">
+            <input type="text" id="city-input" placeholder="Inserisci comune italiano o città estera..." onkeypress="handleKeyPress(event)">
+            <button onclick="searchCity()">Cerca</button>
+        </div>
+
+        <h2 id="city-name">Cerca una località nel mondo</h2>
+
+        <div class="temp-display">
+            <span id="temperature">--</span><span class="unit">°C</span>
+        </div>
+        
+        <div class="weather-details">
+            <p>Umidità: <strong id="humidity">--</strong>%</p>
+            <p>Vento: <strong id="wind">--</strong> km/h</p>
+        </div>
+    </div>
+
+    <!-- SPAZIO PUBBLICITARIO BASSO -->
+    <div class="ads-container bottom-ads">
+        <span>Spazio Pubblicitario</span>
+        <!-- Qui in futuro incollerai il codice di Google AdSense -->
+    </div>
+
+    <footer>
+        <p>&copy; 2026 MeteoPunto.com - Tutti i diritti riservati.</p>
+        <p>Dati meteo forniti da <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo.com</a></p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
