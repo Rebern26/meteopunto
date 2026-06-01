@@ -2,7 +2,6 @@ function searchCity() {
     const cityName = document.getElementById('city-input').value.trim();
     if (!cityName) return alert("Inserisci il nome di una città o comune!");
 
-    // Cerca le coordinate geografiche traducendo il nome inserito
     const geocodingUrl = `https://open-meteo.com{encodeURIComponent(cityName)}&count=1&language=it`;
 
     fetch(geocodingUrl)
@@ -11,17 +10,15 @@ function searchCity() {
             if (!data.results || data.results.length === 0) {
                 throw new Error("Località non trovata. Riprova controllando il nome.");
             }
-            
+
             const city = data.results[0];
             const lat = city.latitude;
             const lon = city.longitude;
-            const country = city.country || '';
-            const admin1 = city.admin1 ? `, ${city.admin1}` : ''; // Provincia o Regione
+            const country = city.country || "";
+            const admin1 = city.admin1 ? `, ${city.admin1}` : "";
 
-            // Mostra il nome completo sullo schermo (es. Milano, Lombardia, Italy)
             document.getElementById('city-name').innerText = `${city.name}${admin1}, ${country}`;
 
-            // Esegue la chiamata meteo per quella posizione
             getWeather(lat, lon);
         })
         .catch(error => {
@@ -35,17 +32,12 @@ function getWeather(lat, lon) {
     fetch(weatherUrl)
         .then(response => response.json())
         .then(data => {
-            document.getElementById('temperature').innerText = Math.round(data.current.temperature_2m);
-            document.getElementById('humidity').innerText = data.current.relative_humidity_2m;
-            document.getElementById('wind').innerText = Math.round(data.current.wind_speed_10m);
+            const current = data.current;
+            document.getElementById('temperature').innerText = `${Math.round(current.temperature_2m)}°C`;
+            document.getElementById('humidity').innerText = `Umidità: ${current.relative_humidity_2m}%`;
+            document.getElementById('wind').innerText = `Vento: ${current.wind_speed_10m} km/h`;
         })
         .catch(error => {
-            console.error("Errore nel recupero dei dati meteo:", error);
+            alert("Errore nel recupero dei dati meteo.");
         });
-}
-
-function handleKeyPress(event) {
-    if (event.key === "Enter") {
-        searchCity();
-    }
 }
