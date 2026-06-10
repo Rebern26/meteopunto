@@ -1,0 +1,1656 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+      Meteo Roma Oggi - Previsioni Orarie e 5 Giorni - MeteoPunto.com
+    </title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        font-family: "IBM Plex Sans", sans-serif;
+      }
+      .mono {
+        font-family: "IBM Plex Mono", monospace;
+      }
+      .temp-max {
+        color: #ef4444;
+      }
+      .temp-min {
+        color: #3b82f6;
+      }
+      .rain-val {
+        color: #0369a1;
+      }
+      .ad-slot {
+        background: #e2e8f0;
+        border: 1px dashed #94a3b8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        font-size: 12px;
+        letter-spacing: 0.05em;
+      }
+      .weather-icon-wrap {
+        background: #90c8f0;
+        border-radius: 10px;
+        width: 58px;
+        height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+      }
+      .weather-icon-wrap.night {
+        background: #1e3a5f;
+      }
+      .weather-icon-wrap-lg {
+        background: #90c8f0;
+        border-radius: 16px;
+        width: 96px;
+        height: 96px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .weather-icon-wrap-lg.night {
+        background: #1e3a5f;
+      }
+      .nav-link {
+        cursor: pointer;
+        padding: 6px 14px;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.8);
+        transition: all 0.15s;
+      }
+      .nav-link:hover,
+      .nav-link.active {
+        background: rgba(255, 255, 255, 0.18);
+        color: #fff;
+      }
+      .section {
+        display: none;
+      }
+      .section.active {
+        display: block;
+      }
+      .hour-row:hover {
+        background: #f1f5f9;
+      }
+      #search-input:focus {
+        outline: 2px solid #0284c7;
+        outline-offset: 0;
+      }
+      .avalanche-box {
+        border-radius: 6px;
+        padding: 10px 14px;
+        font-size: 13px;
+        color: #fff;
+        font-weight: 600;
+      }
+      #cookie-banner {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 9999;
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        font-size: 13px;
+      }
+      .forecast-card {
+        background: #dbeeff;
+        border: 1px solid #a8cef0;
+        border-radius: 8px;
+        padding: 12px;
+        text-align: center;
+        min-width: 90px;
+      }
+      .skeleton {
+        background: linear-gradient(
+          90deg,
+          #f1f5f9 25%,
+          #e2e8f0 50%,
+          #f1f5f9 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.4s infinite;
+        border-radius: 4px;
+      }
+      @keyframes shimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+      #autocomplete-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #f0f4f8;
+        border: 1px solid #e2e8f0;
+        border-radius: 0 0 6px 6px;
+        z-index: 100;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+      #autocomplete-list div {
+        padding: 9px 14px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #1e293b;
+      }
+      #autocomplete-list div:hover {
+        background: #f1f5f9;
+      }
+      .active-map-btn {
+        background: #0284c7 !important;
+        color: #fff !important;
+        border-color: #0284c7 !important;
+      }
+      .layer-btn.active-layer {
+        background: #0ea5e9 !important;
+        color: #fff !important;
+        border-color: #0ea5e9 !important;
+      }
+      #leaflet-map {
+        z-index: 1;
+      }
+      .map-weather-loading {
+        animation: pulse 1.5s infinite;
+      }
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.4;
+        }
+      }
+    </style>
+  </head>
+  <body class="bg-[#EEF4FB] min-h-screen text-slate-900">
+    <!-- ADS.TXT NOTE: Posiziona il file ads.txt nella root del dominio: meteopunto.com/ads.txt -->
+
+    <!-- TOP LEADERBOARD AD -->
+    <div
+      class="w-full flex justify-center py-2 bg-[#F0F4F8] border-b border-slate-200"
+    >
+      <div class="ad-slot" style="width: 728px; max-width: 100%; height: 90px">
+        PUBBLICITÀ – 728×90
+      </div>
+    </div>
+
+    <!-- NAVBAR -->
+    <nav class="bg-sky-700 border-b border-sky-800 sticky top-0 z-50">
+      <div
+        class="max-w-7xl mx-auto px-4 flex items-center justify-between h-14 gap-4"
+      >
+        <div class="flex items-center gap-6">
+          <span class="text-xl font-semibold tracking-tight text-white">
+            Meteo<span class="text-orange-400">Punto</span
+            ><span class="text-sky-200 text-sm">.com</span>
+          </span>
+          <div class="hidden md:flex gap-1">
+            <span class="nav-link active" onclick="showSection('italia', this)"
+              >Meteo Italia</span
+            >
+            <span class="nav-link" onclick="showSection('mappe', this)"
+              >Mappe e Radar</span
+            >
+            <span class="nav-link" onclick="showSection('mare', this)"
+              >Mari e Venti</span
+            >
+            <span class="nav-link" onclick="showSection('neve', this)"
+              >Neve e Montagna</span
+            >
+          </div>
+        </div>
+        <div class="flex items-center gap-2 relative" style="min-width: 240px">
+          <div class="relative flex-1">
+            <input
+              id="search-input"
+              type="text"
+              placeholder="Città o coordinate (es. 41.90, 12.49)"
+              class="w-full border border-slate-300 rounded text-sm px-3 py-2 bg-white"
+              autocomplete="off"
+              oninput="handleAutocomplete(this.value)"
+              onkeydown="if (event.key === 'Enter') searchCity();"
+            />
+            <div id="autocomplete-list" class="hidden"></div>
+          </div>
+          <button
+            onclick="searchCity()"
+            class="bg-orange-500 hover:bg-orange-600 text-white text-sm px-3 py-2 rounded font-medium whitespace-nowrap"
+          >
+            Cerca
+          </button>
+          <button
+            onclick="geolocate()"
+            class="border border-sky-400 hover:bg-sky-600 text-white text-sm px-2 py-2 rounded"
+            title="Geolocalizzami"
+          >
+            📍
+          </button>
+        </div>
+      </div>
+    </nav>
+    <div style="height: 3px; background: #f57c00"></div>
+
+    <!-- MAIN -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+      <!-- ERROR -->
+      <div
+        id="error-msg"
+        class="hidden mb-4 bg-red-50 border border-red-200 text-red-700 rounded px-4 py-3 text-sm"
+      ></div>
+
+      <!-- SEZIONE: METEO ITALIA -->
+      <div id="sec-italia" class="section active">
+        <div class="flex gap-6">
+          <!-- COLONNA SINISTRA -->
+          <div class="flex-1 min-w-0 space-y-5">
+            <!-- METEO ATTUALE -->
+            <div class="bg-[#F0F4F8] border border-slate-200 rounded-lg p-5">
+              <div
+                id="city-name"
+                class="text-2xl font-semibold text-slate-900 skeleton"
+                style="height: 32px; width: 180px"
+              >
+                &nbsp;
+              </div>
+              <div
+                id="last-update"
+                class="text-sm text-slate-500 mt-1 skeleton"
+                style="height: 16px; width: 280px; margin-top: 8px"
+              >
+                &nbsp;
+              </div>
+              <div class="flex items-center gap-6 mt-4">
+                <div id="weather-icon" class="text-5xl">—</div>
+                <div>
+                  <div
+                    id="temp-now"
+                    class="text-5xl font-light mono skeleton"
+                    style="height: 56px; width: 110px"
+                  >
+                    &nbsp;
+                  </div>
+                  <div
+                    id="weather-desc"
+                    class="text-base text-slate-600 mt-1 skeleton"
+                    style="height: 18px; width: 180px"
+                  >
+                    &nbsp;
+                  </div>
+                </div>
+              </div>
+              <div
+                class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5"
+                id="key-data"
+              >
+                <div
+                  class="bg-[#F0F4F8] rounded p-3 skeleton"
+                  style="height: 62px"
+                >
+                  &nbsp;
+                </div>
+                <div
+                  class="bg-[#F0F4F8] rounded p-3 skeleton"
+                  style="height: 62px"
+                >
+                  &nbsp;
+                </div>
+                <div
+                  class="bg-[#F0F4F8] rounded p-3 skeleton"
+                  style="height: 62px"
+                >
+                  &nbsp;
+                </div>
+                <div
+                  class="bg-[#F0F4F8] rounded p-3 skeleton"
+                  style="height: 62px"
+                >
+                  &nbsp;
+                </div>
+              </div>
+            </div>
+
+            <!-- ORARIO -->
+            <div class="bg-[#F0F4F8] border border-slate-200 rounded-lg p-5">
+              <h2 class="text-base font-semibold text-slate-900 mb-3">
+                Previsioni ora per ora
+              </h2>
+              <div id="hourly-table">
+                <div class="skeleton" style="height: 200px; border-radius: 6px">
+                  &nbsp;
+                </div>
+              </div>
+            </div>
+
+            <!-- 5 GIORNI -->
+            <div class="bg-[#F0F4F8] border border-slate-200 rounded-lg p-5">
+              <h2 class="text-base font-semibold text-slate-900 mb-3">
+                Tendenza a 5 giorni
+              </h2>
+              <div id="forecast-container" class="flex gap-3 flex-wrap">
+                <div
+                  class="skeleton forecast-card"
+                  style="height: 110px; width: 90px"
+                >
+                  &nbsp;
+                </div>
+                <div
+                  class="skeleton forecast-card"
+                  style="height: 110px; width: 90px"
+                >
+                  &nbsp;
+                </div>
+                <div
+                  class="skeleton forecast-card"
+                  style="height: 110px; width: 90px"
+                >
+                  &nbsp;
+                </div>
+                <div
+                  class="skeleton forecast-card"
+                  style="height: 110px; width: 90px"
+                >
+                  &nbsp;
+                </div>
+                <div
+                  class="skeleton forecast-card"
+                  style="height: 110px; width: 90px"
+                >
+                  &nbsp;
+                </div>
+              </div>
+            </div>
+
+            <!-- IN-FEED AD -->
+            <div class="flex justify-center">
+              <div class="ad-slot w-full" style="height: 90px">
+                PUBBLICITÀ IN-FEED – 728×90
+              </div>
+            </div>
+          </div>
+
+          <!-- COLONNA DESTRA: AD -->
+          <div class="hidden lg:block" style="width: 300px; flex-shrink: 0">
+            <div class="sticky top-20">
+              <div
+                class="ad-slot"
+                style="width: 300px; height: 600px; border-radius: 8px"
+              >
+                PUBBLICITÀ<br />300×600
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEZIONE: MAPPE -->
+      <div id="sec-mappe" class="section">
+        <!-- TOOLBAR MAPPA -->
+        <div
+          class="bg-[#F0F4F8] border border-slate-200 rounded-lg p-3 mb-3 flex flex-wrap items-center gap-2"
+        >
+          <!-- Vista Italia / Mondo -->
+          <div class="flex gap-1">
+            <button
+              id="btn-italia"
+              onclick="setMapView('italia')"
+              class="map-view-btn active-map-btn px-3 py-1.5 rounded text-sm font-medium border border-slate-200"
+            >
+              🇮🇹 Italia
+            </button>
+            <button
+              id="btn-mondo"
+              onclick="setMapView('mondo')"
+              class="map-view-btn px-3 py-1.5 rounded text-sm font-medium border border-slate-200 text-slate-500"
+            >
+              🌍 Mondo
+            </button>
+          </div>
+
+          <div class="w-px h-6 bg-slate-200 mx-1"></div>
+
+          <!-- Layer RainViewer -->
+          <span class="text-xs text-slate-500 font-medium">Radar:</span>
+          <button
+            onclick="toggleRadar()"
+            id="btn-radar"
+            class="layer-btn px-2.5 py-1 rounded text-xs border border-slate-200 text-slate-500"
+          >
+            🌧️ Radar Pioggia
+          </button>
+          <button
+            onclick="toggleNowcast()"
+            id="btn-nowcast"
+            class="layer-btn px-2.5 py-1 rounded text-xs border border-slate-200 text-slate-500"
+          >
+            🔮 Prossimi 30 minuti
+          </button>
+
+          <!-- Controlli animazione -->
+          <div id="radar-controls" class="hidden flex items-center gap-2 ml-2">
+            <button
+              onclick="radarPrev()"
+              class="px-2 py-1 rounded text-xs border border-slate-200 hover:bg-slate-50"
+            >
+              ◀
+            </button>
+            <button
+              onclick="togglePlay()"
+              id="btn-play"
+              class="px-2 py-1 rounded text-xs border border-slate-200 hover:bg-slate-50"
+            >
+              ▶ Play
+            </button>
+            <button
+              onclick="radarNext()"
+              class="px-2 py-1 rounded text-xs border border-slate-200 hover:bg-slate-50"
+            >
+              ▶
+            </button>
+            <span id="radar-time" class="text-xs text-slate-400 mono"></span>
+          </div>
+
+          <div class="ml-auto text-xs text-slate-400">
+            Clicca sulla mappa per il meteo
+          </div>
+        </div>
+
+        <!-- CONTENITORE MAPPA + PANNELLO -->
+        <div class="flex gap-3">
+          <!-- MAPPA -->
+          <div
+            class="flex-1 bg-[#F0F4F8] border border-slate-200 rounded-lg overflow-hidden"
+            style="height: 520px"
+          >
+            <div id="leaflet-map" style="width: 100%; height: 100%"></div>
+          </div>
+
+          <!-- PANNELLO METEO CLICCATO -->
+          <div
+            id="map-weather-panel"
+            class="bg-[#F0F4F8] border border-slate-200 rounded-lg p-4 flex-shrink-0"
+            style="width: 220px"
+          >
+            <div
+              id="map-panel-content"
+              class="text-slate-400 text-sm text-center mt-8"
+            >
+              <div class="text-3xl mb-2">📍</div>
+              <p>Clicca su un punto della mappa per vedere il meteo</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SEZIONE: MARE -->
+      <div id="sec-mare" class="section">
+        <div class="bg-[#F0F4F8] border border-slate-200 rounded-lg p-5">
+          <h2 class="text-base font-semibold mb-1">Mari e Venti</h2>
+          <p class="text-sm text-slate-500 mb-4">
+            Città: <span id="mare-city">—</span>
+          </p>
+          <div id="mare-content" class="text-slate-500 text-sm">
+            Cerca una città costiera per visualizzare i dati marittimi.
+          </div>
+        </div>
+      </div>
+
+      <!-- SEZIONE: NEVE -->
+      <div id="sec-neve" class="section">
+        <div class="bg-[#F0F4F8] border border-slate-200 rounded-lg p-5">
+          <h2 class="text-base font-semibold mb-1">Neve e Montagna</h2>
+          <p class="text-sm text-slate-500 mb-4">
+            Città: <span id="neve-city">—</span>
+          </p>
+          <div id="neve-content" class="text-slate-500 text-sm">
+            Cerca una città montana per visualizzare i dati nivologici.
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer
+      class="border-t border-slate-200 bg-[#F0F4F8] mt-8 py-5 text-center text-xs text-slate-400"
+    >
+      © 2026 MeteoPunto.com — Tutti i diritti riservati
+    </footer>
+
+    <!-- COOKIE BANNER -->
+    <div id="cookie-banner">
+      <span>
+        🍪 MeteoPunto.com utilizza cookie tecnici e, previo consenso, cookie
+        pubblicitari e di analisi.
+        <a href="#" class="underline text-sky-400">Informativa Privacy</a>
+      </span>
+      <div class="flex gap-2">
+        <button
+          onclick="acceptCookies(false)"
+          class="px-4 py-1.5 rounded border border-slate-500 text-sm hover:bg-slate-700 transition-colors"
+        >
+          Solo essenziali
+        </button>
+        <button
+          onclick="acceptCookies(true)"
+          class="px-4 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-sm font-medium transition-colors"
+        >
+          Accetta tutti
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // ============================================================
+      // CONFIGURAZIONE
+      // ============================================================
+      const API_KEY = "c1ecc4a7c6af1a66ed5a5dd7428d07ff";
+      const CACHE_TTL = 30 * 60 * 1000; // 30 minuti in ms
+
+      // ============================================================
+      // NOMINATIM AUTOCOMPLETE
+      // ============================================================
+      let nominatimDebounce = null;
+      let nominatimResults = []; // cache risultati per usarli in searchCity
+
+      async function fetchNominatim(query) {
+        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=7&addressdetails=1&accept-language=it`;
+        const res = await fetch(url);
+        return await res.json();
+      }
+
+      let currentCity = null;
+
+      // ============================================================
+      // CACHE LOCALSTORAGE
+      // ============================================================
+      function getCached(key) {
+        try {
+          const raw = localStorage.getItem("mp_" + key);
+          if (!raw) return null;
+          const obj = JSON.parse(raw);
+          const age = Date.now() - obj.ts;
+          if (age > CACHE_TTL) {
+            console.log(
+              `[MeteoPunto Cache] MISS (scaduta) per: ${key} — età: ${Math.round(age / 60000)} min`,
+            );
+            return null;
+          }
+          console.log(
+            `[MeteoPunto Cache] HIT per: ${key} — età: ${Math.round(age / 1000)}s`,
+          );
+          return obj.data;
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function setCache(key, data) {
+        try {
+          localStorage.setItem(
+            "mp_" + key,
+            JSON.stringify({ ts: Date.now(), data }),
+          );
+          console.log(`[MeteoPunto Cache] SALVATA: ${key}`);
+        } catch (e) {
+          console.warn("[MeteoPunto Cache] Errore salvataggio:", e);
+        }
+      }
+
+      // ============================================================
+      // NAVIGAZIONE SEZIONI
+      // ============================================================
+      function showSection(name, el) {
+        document
+          .querySelectorAll(".section")
+          .forEach((s) => s.classList.remove("active"));
+        document
+          .querySelectorAll(".nav-link")
+          .forEach((l) => l.classList.remove("active"));
+        document.getElementById("sec-" + name).classList.add("active");
+        if (el) el.classList.add("active");
+      }
+
+      // ============================================================
+      // AUTOCOMPLETAMENTO (Nominatim)
+      // ============================================================
+      function handleAutocomplete(val) {
+        const list = document.getElementById("autocomplete-list");
+
+        // Supporto coordinate: es. "41.90, 12.49"
+        const coordRegex = /^(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)$/;
+        if (coordRegex.test(val.trim())) {
+          list.classList.add("hidden");
+          return; // le coordinate vengono gestite direttamente in searchCity
+        }
+
+        if (!val || val.length < 2) {
+          list.classList.add("hidden");
+          return;
+        }
+
+        clearTimeout(nominatimDebounce);
+        nominatimDebounce = setTimeout(async () => {
+          try {
+            const results = await fetchNominatim(val);
+            nominatimResults = results;
+            if (!results.length) {
+              list.classList.add("hidden");
+              return;
+            }
+
+            list.innerHTML = results
+              .map((r, i) => {
+                const addr = r.address;
+                const primary =
+                  addr.village ||
+                  addr.hamlet ||
+                  addr.suburb ||
+                  addr.neighbourhood ||
+                  addr.city ||
+                  addr.town ||
+                  addr.county ||
+                  r.display_name.split(",")[0];
+                const secondary = [addr.county, addr.state, addr.country]
+                  .filter(Boolean)
+                  .join(", ");
+                return `<div onclick="selectNominatimResult(${i})">
+          <span class="font-medium">${primary}</span>
+          <span class="text-slate-400 text-xs ml-1">${secondary}</span>
+        </div>`;
+              })
+              .join("");
+            list.classList.remove("hidden");
+          } catch (e) {
+            list.classList.add("hidden");
+          }
+        }, 400);
+      }
+
+      function selectNominatimResult(index) {
+        const r = nominatimResults[index];
+        if (!r) return;
+        const addr = r.address;
+        const name =
+          addr.village ||
+          addr.hamlet ||
+          addr.suburb ||
+          addr.neighbourhood ||
+          addr.city ||
+          addr.town ||
+          addr.county ||
+          r.display_name.split(",")[0];
+        document.getElementById("search-input").value = name;
+        document.getElementById("autocomplete-list").classList.add("hidden");
+        // Usiamo direttamente le coordinate, senza chiamare di nuovo il geocoding
+        currentCity = { lat: parseFloat(r.lat), lon: parseFloat(r.lon), name };
+        document.getElementById("error-msg").classList.add("hidden");
+        showLoading();
+        loadWeather(currentCity);
+      }
+
+      document.addEventListener("click", (e) => {
+        if (
+          !e.target.closest("#search-input") &&
+          !e.target.closest("#autocomplete-list")
+        )
+          document.getElementById("autocomplete-list").classList.add("hidden");
+      });
+
+      // ============================================================
+      // RICERCA CITTÀ
+      // ============================================================
+      async function searchCity() {
+        const q = document.getElementById("search-input").value.trim();
+        if (!q) return;
+        document.getElementById("error-msg").classList.add("hidden");
+        document.getElementById("autocomplete-list").classList.add("hidden");
+        showLoading();
+
+        try {
+          // Supporto coordinate dirette: "41.90, 12.49"
+          const coordRegex = /^(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)$/;
+          const coordMatch = q.match(coordRegex);
+          if (coordMatch) {
+            const lat = parseFloat(coordMatch[1]);
+            const lon = parseFloat(coordMatch[2]);
+            if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+              showError(
+                "Coordinate non valide. Usa il formato: latitudine, longitudine (es. 41.90, 12.49)",
+              );
+              return;
+            }
+            // Reverse geocoding con Nominatim per ottenere il nome
+            let name = `${lat.toFixed(4)}, ${lon.toFixed(4)}`;
+            try {
+              const rev = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=it`,
+              );
+              const revData = await rev.json();
+              if (revData && revData.address) {
+                const a = revData.address;
+                name =
+                  a.city || a.town || a.village || a.hamlet || a.county || name;
+              }
+            } catch (e) {
+              /* usa coordinate come nome */
+            }
+            currentCity = { lat, lon, name };
+            await loadWeather(currentCity);
+            return;
+          }
+
+          // Geocoding con Nominatim
+          const geoKey = "geo_" + q.toLowerCase().replace(/\s+/g, "_");
+          let coords = getCached(geoKey);
+
+          if (!coords) {
+            console.log(`[MeteoPunto] Nominatim geocoding per: ${q}`);
+            const results = await fetchNominatim(q);
+            if (!results || !results.length) {
+              showError(
+                "Località non trovata. Prova a scrivere il nome completo o usa le coordinate (es. 41.90, 12.49).",
+              );
+              return;
+            }
+            const r = results[0];
+            const addr = r.address;
+            const name =
+              addr.village ||
+              addr.hamlet ||
+              addr.suburb ||
+              addr.neighbourhood ||
+              addr.city ||
+              addr.town ||
+              addr.county ||
+              r.display_name.split(",")[0];
+            coords = { lat: parseFloat(r.lat), lon: parseFloat(r.lon), name };
+            setCache(geoKey, coords);
+          }
+
+          currentCity = coords;
+          await loadWeather(coords);
+        } catch (e) {
+          showError(
+            "Errore di connessione. Controlla la tua connessione Internet e riprova.",
+          );
+          console.error("[MeteoPunto] Errore:", e);
+        }
+      }
+
+      // ============================================================
+      // CARICAMENTO DATI METEO
+      // ============================================================
+      async function loadWeather(coords) {
+        const { lat, lon, name } = coords;
+        const wKey = `weather_${lat.toFixed(2)}_${lon.toFixed(2)}`;
+        const fKey = `forecast_${lat.toFixed(2)}_${lon.toFixed(2)}`;
+
+        let wData = getCached(wKey);
+        let fData = getCached(fKey);
+
+        const fetches = [];
+
+        if (!wData) {
+          console.log(`[MeteoPunto API] Meteo corrente chiamata per: ${name}`);
+          fetches.push(
+            fetch(
+              `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=it`,
+            )
+              .then((r) => r.json())
+              .then((d) => {
+                wData = d;
+                setCache(wKey, d);
+              }),
+          );
+        }
+
+        if (!fData) {
+          console.log(`[MeteoPunto API] Previsioni chiamata per: ${name}`);
+          fetches.push(
+            fetch(
+              `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=it`,
+            )
+              .then((r) => r.json())
+              .then((d) => {
+                fData = d;
+                setCache(fKey, d);
+              }),
+          );
+        }
+
+        await Promise.all(fetches);
+
+        renderCurrent(wData, name);
+        renderHourly(fData);
+        renderForecast(fData);
+        updateSEO(name);
+        updateMarineSection(name, wData);
+        updateSnowSection(name, wData);
+      }
+
+      // ============================================================
+      // RENDER METEO ATTUALE
+      // ============================================================
+      function renderCurrent(d, name) {
+        const now = new Date();
+        const fmt =
+          now.toLocaleDateString("it-IT", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          }) +
+          " alle ore " +
+          now.toLocaleTimeString("it-IT", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+
+        const cityEl = document.getElementById("city-name");
+        cityEl.innerHTML = `${name}, <span class="text-slate-400 text-lg font-normal">${d.sys?.country || "IT"}</span>`;
+        cityEl.classList.remove("skeleton");
+        cityEl.style = "";
+
+        const updEl = document.getElementById("last-update");
+        updEl.textContent = "Aggiornamento: " + fmt;
+        updEl.classList.remove("skeleton");
+        updEl.style = "";
+
+        document.getElementById("weather-icon").innerHTML =
+          `<div class="weather-icon-wrap-lg ${iconNightClass(d.weather[0].icon)}"><img src="${meteoconUrl(d.weather[0].icon)}" alt="${d.weather[0].description}" width="72" height="72"></div>`;
+
+        const tempEl = document.getElementById("temp-now");
+        tempEl.textContent = Math.round(d.main.temp) + "°C";
+        tempEl.classList.remove("skeleton");
+        tempEl.style = "";
+
+        const descEl = document.getElementById("weather-desc");
+        descEl.textContent = capitalize(d.weather[0].description);
+        descEl.classList.remove("skeleton");
+        descEl.style = "";
+
+        const windDir = degToDir(d.wind.deg);
+        const windKmh = Math.round(d.wind.speed * 3.6);
+
+        document.getElementById("key-data").innerHTML = `
+    <div class="bg-[#F0F4F8] rounded p-3">
+      <div class="text-xs text-slate-500 mb-1">Percepita</div>
+      <div class="text-xl font-medium mono">${Math.round(d.main.feels_like)}°C</div>
+    </div>
+    <div class="bg-[#F0F4F8] rounded p-3">
+      <div class="text-xs text-slate-500 mb-1">Umidità</div>
+      <div class="text-xl font-medium mono">${d.main.humidity}%</div>
+    </div>
+    <div class="bg-[#F0F4F8] rounded p-3">
+      <div class="text-xs text-slate-500 mb-1">Pressione</div>
+      <div class="text-xl font-medium mono">${d.main.pressure} hPa</div>
+    </div>
+    <div class="bg-[#F0F4F8] rounded p-3">
+      <div class="text-xs text-slate-500 mb-1">Vento</div>
+      <div class="text-xl font-medium mono">${windKmh} km/h</div>
+      <div class="text-xs text-slate-500">${windDir}</div>
+    </div>
+  `;
+      }
+
+      // ============================================================
+      // RENDER TABELLA ORARIA
+      // ============================================================
+      function renderHourly(f) {
+        const slots = f.list.slice(0, 8);
+        let html = `
+    <div class="overflow-x-auto">
+    <table class="w-full text-sm border-collapse" style="min-width:500px;">
+      <thead>
+        <tr class="border-b border-slate-200 text-xs text-slate-500 uppercase tracking-wide">
+          <th class="text-left py-2 px-3 font-medium">Ora</th>
+          <th class="text-center py-2 px-3 font-medium">Cond.</th>
+          <th class="text-right py-2 px-3 font-medium">Temp.</th>
+          <th class="text-right py-2 px-3 font-medium">Prec. mm</th>
+          <th class="text-right py-2 px-3 font-medium">Vento km/h</th>
+          <th class="text-right py-2 px-3 font-medium">Umidità</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+        slots.forEach((s) => {
+          const t = new Date(s.dt * 1000);
+          const hh = t.toLocaleTimeString("it-IT", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+          const rain = ((s.rain && s.rain["3h"]) || 0).toFixed(1);
+          const wind = Math.round(s.wind.speed * 3.6);
+          const dir = degToDir(s.wind.deg);
+          const rainClass =
+            parseFloat(rain) > 0 ? "rain-val font-semibold" : "text-slate-400";
+
+          html += `<tr class="hour-row border-b border-slate-100 transition-colors">
+      <td class="py-2.5 px-3 mono font-medium text-slate-700">${hh}</td>
+      <td class="py-2.5 px-3 text-center"><div class="weather-icon-wrap ${iconNightClass(s.weather[0].icon)}"><img src="${meteoconUrl(s.weather[0].icon)}" alt="" width="44" height="44"></div></td>
+      <td class="py-2.5 px-3 text-right mono font-semibold">${Math.round(s.main.temp)}°</td>
+      <td class="py-2.5 px-3 text-right mono ${rainClass}">${rain}</td>
+      <td class="py-2.5 px-3 text-right mono text-slate-600">${wind} ${dir}</td>
+      <td class="py-2.5 px-3 text-right mono text-slate-600">${s.main.humidity}%</td>
+    </tr>`;
+        });
+
+        html += "</tbody></table></div>";
+        document.getElementById("hourly-table").innerHTML = html;
+      }
+
+      // ============================================================
+      // RENDER PREVISIONI 5 GIORNI
+      // ============================================================
+      function renderForecast(f) {
+        const daily = {};
+        f.list.forEach((s) => {
+          const d = new Date(s.dt * 1000).toISOString().split("T")[0];
+          if (!daily[d]) {
+            daily[d] = {
+              temps: [],
+              rain: 0,
+              icon: s.weather[0],
+              id: s.weather[0].id,
+            };
+          }
+          daily[d].temps.push(s.main.temp);
+          daily[d].rain += (s.rain && s.rain["3h"]) || 0;
+          if (new Date(s.dt * 1000).getHours() >= 12) {
+            daily[d].icon = s.weather[0];
+            daily[d].id = s.weather[0].id;
+          }
+        });
+
+        const days = Object.entries(daily).slice(0, 5);
+        let html = "";
+
+        days.forEach(([date, v], i) => {
+          const dt = new Date(date + "T12:00:00");
+          const isToday = i === 0;
+          const label = isToday
+            ? "Oggi"
+            : dt.toLocaleDateString("it-IT", {
+                weekday: "short",
+                day: "2-digit",
+                month: "2-digit",
+              });
+          const min = Math.round(Math.min(...v.temps));
+          const max = Math.round(Math.max(...v.temps));
+          const rain = v.rain.toFixed(1);
+          const hasRain = parseFloat(rain) > 0;
+
+          html += `<div class="forecast-card">
+      <div class="text-xs text-slate-500 mb-1 font-medium">${label}</div>
+      <div class="weather-icon-wrap ${iconNightClass(v.icon.icon)}" style="width:70px;height:70px;border-radius:12px;margin:0 auto 6px;"><img src="${meteoconUrl(v.icon.icon)}" alt="" width="56" height="56"></div>
+      <div class="text-sm">
+        <span class="temp-max font-semibold">${max}°</span>
+        <span class="text-slate-300 mx-0.5">/</span>
+        <span class="temp-min">${min}°</span>
+      </div>
+      <div class="text-xs mt-1 ${hasRain ? "rain-val font-medium" : "text-slate-300"}">${rain} mm</div>
+    </div>`;
+        });
+
+        document.getElementById("forecast-container").innerHTML = html;
+      }
+
+      // ============================================================
+      // SEZIONE MARI E VENTI
+      // ============================================================
+      function updateMarineSection(name, d) {
+        document.getElementById("mare-city").textContent = name;
+        const windKn = Math.round(d.wind.speed * 1.944);
+        const gustKn = d.wind.gust ? Math.round(d.wind.gust * 1.944) : "—";
+        const dir = degToDir(d.wind.deg);
+
+        document.getElementById("mare-content").innerHTML = `
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+      <div class="bg-[#F0F4F8] rounded p-3">
+        <div class="text-xs text-slate-500 mb-1">Vento a 10m</div>
+        <div class="text-xl font-semibold mono">${windKn} nd</div>
+        <div class="text-xs text-slate-500">${dir}</div>
+      </div>
+      <div class="bg-[#F0F4F8] rounded p-3">
+        <div class="text-xs text-slate-500 mb-1">Raffiche</div>
+        <div class="text-xl font-semibold mono">${gustKn} nd</div>
+      </div>
+      <div class="bg-[#F0F4F8] rounded p-3">
+        <div class="text-xs text-slate-500 mb-1">Pressione</div>
+        <div class="text-xl font-semibold mono">${d.main.pressure} hPa</div>
+      </div>
+      <div class="bg-[#F0F4F8] rounded p-3">
+        <div class="text-xs text-slate-500 mb-1">Umidità</div>
+        <div class="text-xl font-semibold mono">${d.main.humidity}%</div>
+      </div>
+    </div>
+    `;
+      }
+
+      // ============================================================
+      // SEZIONE NEVE E MONTAGNA
+      // ============================================================
+      function updateSnowSection(name, d) {
+        document.getElementById("neve-city").textContent = name;
+        const snow =
+          d.snow && d.snow["1h"]
+            ? (d.snow["1h"] * 10).toFixed(1) + " cm/h"
+            : "Assente";
+        const temp = Math.round(d.main.temp);
+        const windKmh = Math.round(d.wind.speed * 3.6);
+
+        document.getElementById("neve-content").innerHTML = `
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-4">
+      <div class="bg-[#F0F4F8] rounded p-3">
+        <div class="text-xs text-slate-500 mb-1">Neve recente</div>
+        <div class="text-xl font-semibold mono">${snow}</div>
+      </div>
+      <div class="bg-[#F0F4F8] rounded p-3">
+        <div class="text-xs text-slate-500 mb-1">Temperatura</div>
+        <div class="text-xl font-semibold mono">${temp}°C</div>
+      </div>
+      <div class="bg-[#F0F4F8] rounded p-3">
+        <div class="text-xs text-slate-500 mb-1">Vento in quota</div>
+        <div class="text-xl font-semibold mono">${windKmh} km/h</div>
+      </div>
+    </div>
+    <div class="avalanche-box bg-green-600 inline-flex items-center gap-2 mb-3">
+      ⛰️ Bollettino Valanghe: Rischio 1 – Debole
+    </div>
+    `;
+      }
+
+      // ============================================================
+      // LOADING SKELETONS
+      // ============================================================
+      function showLoading() {
+        ["city-name", "last-update", "temp-now", "weather-desc"].forEach(
+          (id) => {
+            const el = document.getElementById(id);
+            el.innerHTML = "&nbsp;";
+            el.classList.add("skeleton");
+          },
+        );
+        document.getElementById("weather-icon").textContent = "—";
+        document.getElementById("key-data").innerHTML = Array(4)
+          .fill(
+            '<div class="bg-[#F0F4F8] rounded p-3 skeleton" style="height:62px;">&nbsp;</div>',
+          )
+          .join("");
+        document.getElementById("hourly-table").innerHTML =
+          '<div class="skeleton" style="height:200px;border-radius:6px;">&nbsp;</div>';
+        document.getElementById("forecast-container").innerHTML = Array(5)
+          .fill(
+            '<div class="skeleton forecast-card" style="height:110px;width:90px;">&nbsp;</div>',
+          )
+          .join("");
+      }
+
+      // ============================================================
+      // ERRORE
+      // ============================================================
+      function showError(msg) {
+        const el = document.getElementById("error-msg");
+        el.textContent = msg;
+        el.classList.remove("hidden");
+        // Rimuovi skeleton dopo errore
+        ["city-name", "last-update", "temp-now", "weather-desc"].forEach(
+          (id) => {
+            const e = document.getElementById(id);
+            e.classList.remove("skeleton");
+            e.innerHTML = "";
+          },
+        );
+        document.getElementById("weather-icon").textContent = "";
+        document.getElementById("key-data").innerHTML = "";
+        document.getElementById("hourly-table").innerHTML = "";
+        document.getElementById("forecast-container").innerHTML = "";
+      }
+
+      // ============================================================
+      // SEO DINAMICO
+      // ============================================================
+      function updateSEO(city) {
+        document.title = `Meteo ${city} Oggi - Previsioni Orarie e 5 Giorni - MeteoPunto.com`;
+        let desc = document.querySelector('meta[name="description"]');
+        if (!desc) {
+          desc = document.createElement("meta");
+          desc.name = "description";
+          document.head.appendChild(desc);
+        }
+        desc.content = `Previsioni meteo ${city} oggi con aggiornamento in tempo reale. Dati orari, tendenza 5 giorni, vento, pressione e umidità su MeteoPunto.com.`;
+      }
+
+      // ============================================================
+      // GEOLOCALIZZAZIONE
+      // ============================================================
+      async function geolocate() {
+        if (!navigator.geolocation) {
+          showError("Geolocalizzazione non supportata da questo browser.");
+          return;
+        }
+        showLoading();
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            const { latitude: lat, longitude: lon } = pos.coords;
+            try {
+              const res = await fetch(
+                `https://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${API_KEY}`,
+              );
+              const data = await res.json();
+              if (!data.length) {
+                showError("Impossibile identificare la località.");
+                return;
+              }
+              const name = data[0].local_names?.it || data[0].name;
+              currentCity = { lat, lon, name };
+              document.getElementById("search-input").value = name;
+              await loadWeather(currentCity);
+            } catch (e) {
+              showError("Errore durante la geolocalizzazione. Riprova.");
+            }
+          },
+          () =>
+            showError(
+              "Accesso alla posizione negato. Abilita la geolocalizzazione nel browser.",
+            ),
+        );
+      }
+
+      // ============================================================
+      // UTILITY: ICONE METEO
+      // ============================================================
+      function owmIcon(id, iconCode) {
+        const n = iconCode && iconCode.includes("n");
+        if (id >= 200 && id < 300) return "⛈️";
+        if (id >= 300 && id < 400) return "🌦️";
+        if (id >= 500 && id < 510) return id === 500 ? "🌧️" : "🌧️";
+        if (id === 511) return "🌨️";
+        if (id >= 520) return "🌦️";
+        if (id >= 600 && id < 700) return "❄️";
+        if (id >= 700 && id < 800) return "🌫️";
+        if (id === 800) return n ? "🌙" : "☀️";
+        if (id === 801) return "🌤️";
+        if (id === 802) return "⛅";
+        if (id >= 803) return "☁️";
+        return "🌡️";
+      }
+
+      // ============================================================
+      // UTILITY: DIREZIONE VENTO
+      // ============================================================
+      function degToDir(deg) {
+        if (deg === undefined || deg === null) return "";
+        const dirs = [
+          "N",
+          "NNE",
+          "NE",
+          "ENE",
+          "E",
+          "ESE",
+          "SE",
+          "SSE",
+          "S",
+          "SSO",
+          "SO",
+          "OSO",
+          "O",
+          "ONO",
+          "NO",
+          "NNO",
+        ];
+        return dirs[Math.round(deg / 22.5) % 16];
+      }
+
+      // ============================================================
+      // UTILITY: CAPITALIZE
+      // ============================================================
+      function capitalize(s) {
+        return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+      }
+
+      // ============================================================
+      // COOKIE BANNER
+      // ============================================================
+      function acceptCookies(all) {
+        localStorage.setItem("mp_cookies", all ? "all" : "essential");
+        document.getElementById("cookie-banner").style.display = "none";
+        console.log(
+          "[MeteoPunto] Cookie consent salvato:",
+          all ? "tutti" : "solo essenziali",
+        );
+      }
+
+      if (localStorage.getItem("mp_cookies")) {
+        document.getElementById("cookie-banner").style.display = "none";
+      }
+
+      // ============================================================
+      // AVVIO: CARICA ROMA DI DEFAULT
+      // ============================================================
+      window.addEventListener("load", () => {
+        document.getElementById("search-input").value = "Roma";
+        searchCity();
+      });
+
+      // ============================================================
+      // UTILITY: ICONE METEOCONS (Bas Milius) - gratuite open source
+      // https://github.com/basmilius/weather-icons
+      // ============================================================
+      const METEOCONS_BASE =
+        "https://cdn.jsdelivr.net/gh/basmilius/weather-icons@dev/production/fill/svg";
+
+      function iconNightClass(iconCode) {
+        return iconCode && iconCode.endsWith("n") ? "night" : "";
+      }
+
+      function meteoconUrl(iconCode) {
+        const night = iconCode && iconCode.endsWith("n");
+        const map = {
+          "01d": "clear-day",
+          "01n": "clear-night",
+          "02d": "partly-cloudy-day",
+          "02n": "partly-cloudy-night",
+          "03d": "cloudy",
+          "03n": "cloudy",
+          "04d": "overcast-day",
+          "04n": "overcast-night",
+          "09d": "drizzle",
+          "09n": "drizzle",
+          "10d": "partly-cloudy-day-rain",
+          "10n": "partly-cloudy-night-rain",
+          "11d": "thunderstorms-day",
+          "11n": "thunderstorms-night",
+          "13d": "snow",
+          "13n": "snow",
+          "50d": "mist",
+          "50n": "mist",
+        };
+        const name =
+          map[iconCode] ||
+          (night ? "partly-cloudy-night" : "partly-cloudy-day");
+        return `${METEOCONS_BASE}/${name}.svg`;
+      }
+
+      function owmIconUrl(iconCode) {
+        return meteoconUrl(iconCode);
+      }
+
+      // ============================================================
+      // MAPPA LEAFLET + RAINVIEWER
+      // ============================================================
+      let leafletMap = null;
+      let mapMarker = null;
+      let mapInitialized = false;
+
+      // RainViewer
+      let radarFrames = [];
+      let nowcastFrames = [];
+      let radarLayer = null;
+      let nowcastLayer = null;
+      let radarActive = false;
+      let nowcastActive = false;
+      let currentFrameIndex = 0;
+      let playInterval = null;
+      const RAINVIEWER_OPACITY = 0.6;
+
+      async function loadRainViewerFrames() {
+        try {
+          const res = await fetch(
+            "https://api.rainviewer.com/public/weather-maps.json",
+          );
+          const data = await res.json();
+          radarFrames = data.radar.past || [];
+          nowcastFrames = data.radar.nowcast || [];
+          return data.host;
+        } catch (e) {
+          console.warn("[MeteoPunto] RainViewer non disponibile:", e);
+          return null;
+        }
+      }
+
+      function getRainViewerTileUrl(host, path) {
+        return `${host}${path}/256/{z}/{x}/{y}/2/1_1.png`;
+      }
+
+      function updateRadarTime() {
+        if (!radarFrames.length) return;
+        const frame = radarFrames[currentFrameIndex];
+        const dt = new Date(frame.time * 1000);
+        const label = dt.toLocaleTimeString("it-IT", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+        const isNowcast =
+          currentFrameIndex >=
+          radarFrames.length -
+            (radarFrames.length -
+              radarFrames.findIndex((f) => f.time > Date.now() / 1000));
+        document.getElementById("radar-time").textContent =
+          label + (frame.time > Date.now() / 1000 ? " (prev.)" : "");
+      }
+
+      async function toggleRadar() {
+        if (!mapInitialized) initMap();
+        const btn = document.getElementById("btn-radar");
+
+        if (radarActive) {
+          if (radarLayer) {
+            leafletMap.removeLayer(radarLayer);
+            radarLayer = null;
+          }
+          if (playInterval) {
+            clearInterval(playInterval);
+            playInterval = null;
+          }
+          radarActive = false;
+          btn.classList.remove("active-layer");
+          document.getElementById("radar-controls").classList.add("hidden");
+          document.getElementById("btn-play").textContent = "▶ Play";
+          return;
+        }
+
+        btn.textContent = "⏳ Caricamento...";
+        const host = await loadRainViewerFrames();
+        if (!host || !radarFrames.length) {
+          btn.textContent = "🌧️ Radar Pioggia";
+          alert("Radar non disponibile al momento.");
+          return;
+        }
+
+        // Disattiva nowcast se attivo
+        if (nowcastActive) toggleNowcast();
+
+        currentFrameIndex = radarFrames.length - 1;
+        radarLayer = L.tileLayer(
+          getRainViewerTileUrl(host, radarFrames[currentFrameIndex].path),
+          {
+            opacity: RAINVIEWER_OPACITY,
+            tileSize: 256,
+            attribution: "© RainViewer",
+          },
+        ).addTo(leafletMap);
+
+        radarActive = true;
+        btn.textContent = "🌧️ Pioggia/Radar";
+        btn.classList.add("active-layer");
+        document.getElementById("radar-controls").classList.remove("hidden");
+        updateRadarTime();
+
+        // Salva host per uso successivo
+        leafletMap._rvHost = host;
+      }
+
+      async function toggleNowcast() {
+        if (!mapInitialized) initMap();
+        const btn = document.getElementById("btn-nowcast");
+
+        if (nowcastActive) {
+          if (nowcastLayer) {
+            leafletMap.removeLayer(nowcastLayer);
+            nowcastLayer = null;
+          }
+          if (playInterval) {
+            clearInterval(playInterval);
+            playInterval = null;
+          }
+          nowcastActive = false;
+          btn.classList.remove("active-layer");
+          document.getElementById("radar-controls").classList.add("hidden");
+          document.getElementById("btn-play").textContent = "▶ Play";
+          return;
+        }
+
+        btn.textContent = "⏳ Caricamento...";
+        const host = await loadRainViewerFrames();
+        if (!host || !nowcastFrames.length) {
+          btn.textContent = "🔮 Prossimi 30 minuti";
+          alert("Nowcast non disponibile al momento.");
+          return;
+        }
+
+        if (radarActive) toggleRadar();
+
+        currentFrameIndex = 0;
+        nowcastLayer = L.tileLayer(
+          getRainViewerTileUrl(host, nowcastFrames[0].path),
+          {
+            opacity: RAINVIEWER_OPACITY,
+            tileSize: 256,
+            attribution: "© RainViewer",
+          },
+        ).addTo(leafletMap);
+
+        nowcastActive = true;
+        btn.textContent = "🔮 Prossimi 30 minuti";
+        btn.classList.add("active-layer");
+        document.getElementById("radar-controls").classList.remove("hidden");
+        leafletMap._rvHost = host;
+        updateRadarTime();
+      }
+
+      function showFrame(index) {
+        const host = leafletMap._rvHost;
+        if (!host) return;
+
+        const frames = nowcastActive ? nowcastFrames : radarFrames;
+        if (!frames.length) return;
+
+        currentFrameIndex = (index + frames.length) % frames.length;
+        const frame = frames[currentFrameIndex];
+        const newUrl = getRainViewerTileUrl(host, frame.path);
+
+        const currentLayer = nowcastActive ? nowcastLayer : radarLayer;
+
+        const newLayer = L.tileLayer(newUrl, {
+          opacity: 0,
+          tileSize: 256,
+          attribution: "© RainViewer",
+        }).addTo(leafletMap);
+
+        newLayer.once("load", () => {
+          newLayer.setOpacity(RAINVIEWER_OPACITY);
+          if (currentLayer) leafletMap.removeLayer(currentLayer);
+          if (nowcastActive) nowcastLayer = newLayer;
+          else radarLayer = newLayer;
+        });
+
+        updateRadarTime();
+      }
+
+      function radarPrev() {
+        showFrame(currentFrameIndex - 1);
+      }
+      function radarNext() {
+        showFrame(currentFrameIndex + 1);
+      }
+
+      function togglePlay() {
+        const btn = document.getElementById("btn-play");
+        if (playInterval) {
+          clearInterval(playInterval);
+          playInterval = null;
+          btn.textContent = "▶ Play";
+        } else {
+          btn.textContent = "⏸ Pausa";
+          const total = nowcastActive
+            ? nowcastFrames.length
+            : radarFrames.length;
+          playInterval = setInterval(() => {
+            showFrame((currentFrameIndex + 1) % total);
+          }, 600);
+        }
+      }
+
+      function initMap() {
+        if (mapInitialized) return;
+        mapInitialized = true;
+
+        leafletMap = L.map("leaflet-map", { zoomControl: true });
+
+        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+          attribution:
+            '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          maxZoom: 18,
+        }).addTo(leafletMap);
+
+        leafletMap.setView([42.0, 12.5], 6);
+
+        leafletMap.on("click", async function (e) {
+          const { lat, lng } = e.latlng;
+          showMapWeatherLoading();
+
+          if (mapMarker) leafletMap.removeLayer(mapMarker);
+          mapMarker = L.marker([lat, lng]).addTo(leafletMap);
+
+          try {
+            let name = `${lat.toFixed(3)}, ${lng.toFixed(3)}`;
+            try {
+              const rev = await fetch(
+                `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=it`,
+              );
+              const revData = await rev.json();
+              if (revData && revData.address) {
+                const a = revData.address;
+                name =
+                  a.village ||
+                  a.hamlet ||
+                  a.suburb ||
+                  a.neighbourhood ||
+                  a.city ||
+                  a.town ||
+                  a.county ||
+                  name;
+              }
+            } catch (e) {}
+
+            const wRes = await fetch(
+              `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${API_KEY}&units=metric&lang=it`,
+            );
+            const wData = await wRes.json();
+            showMapWeatherPanel(name, wData, lat, lng);
+          } catch (err) {
+            document.getElementById("map-panel-content").innerHTML =
+              '<p class="text-red-500 text-sm text-center mt-4">Errore nel caricamento del meteo.</p>';
+          }
+        });
+      }
+
+      function setMapView(view) {
+        initMap();
+        document
+          .querySelectorAll(".map-view-btn")
+          .forEach((b) => b.classList.remove("active-map-btn"));
+        if (view === "italia") {
+          document.getElementById("btn-italia").classList.add("active-map-btn");
+          leafletMap.flyTo([42.0, 12.5], 6, { duration: 1.2 });
+        } else {
+          document.getElementById("btn-mondo").classList.add("active-map-btn");
+          leafletMap.flyTo([20, 0], 2, { duration: 1.5 });
+        }
+      }
+
+      function showMapWeatherLoading() {
+        document.getElementById("map-panel-content").innerHTML = `
+    <div class="text-center mt-6">
+      <div class="text-3xl map-weather-loading">⏳</div>
+      <p class="text-sm text-slate-400 mt-2">Caricamento...</p>
+    </div>`;
+      }
+
+      function showMapWeatherPanel(name, d, lat, lng) {
+        const temp = Math.round(d.main.temp);
+        const feels = Math.round(d.main.feels_like);
+        const desc = capitalize(d.weather[0].description);
+        const iconUrl = owmIconUrl(d.weather[0].icon);
+        const wind = Math.round(d.wind.speed * 3.6);
+        const windDir = degToDir(d.wind.deg);
+        const humidity = d.main.humidity;
+
+        document.getElementById("map-panel-content").innerHTML = `
+    <div class="text-center mb-3 pb-3 border-b border-slate-100">
+      <div class="text-lg font-semibold text-slate-800 leading-tight">${name}</div>
+      <div class="text-xs text-slate-400 mono mt-0.5">${lat.toFixed(3)}, ${lng.toFixed(3)}</div>
+    </div>
+    <div class="text-center mb-3">
+      <img src="${meteoconUrl(d.weather[0].icon)}" alt="${desc}" width="72" height="72" style="margin:0 auto;">
+      <div class="text-3xl font-light mono">${temp}°C</div>
+      <div class="text-sm text-slate-500 mt-0.5">${desc}</div>
+      <div class="text-xs text-slate-400">Percepita ${feels}°C</div>
+    </div>
+    <div class="space-y-2 text-sm">
+      <div class="flex justify-between">
+        <span class="text-slate-500">💧 Umidità</span>
+        <span class="mono font-medium">${humidity}%</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-slate-500">💨 Vento</span>
+        <span class="mono font-medium">${wind} km/h ${windDir}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-slate-500">📊 Pressione</span>
+        <span class="mono font-medium">${d.main.pressure} hPa</span>
+      </div>
+    </div>
+    <button onclick="loadFromMap(${lat},${lng},'${name.replace(/'/g, "\\'")}')"
+      class="w-full mt-4 bg-sky-600 hover:bg-sky-700 text-white text-xs font-medium py-2 rounded transition-colors">
+      Vedi previsioni complete →
+    </button>`;
+      }
+
+      async function loadFromMap(lat, lon, name) {
+        currentCity = { lat, lon, name };
+        document.getElementById("search-input").value = name;
+        showSection("italia", document.querySelector(".nav-link"));
+        document
+          .querySelectorAll(".nav-link")
+          .forEach((l) => l.classList.remove("active"));
+        document.querySelector(".nav-link").classList.add("active");
+        showLoading();
+        await loadWeather(currentCity);
+      }
+
+      // Inizializza mappa quando si clicca sulla sezione mappe
+      document.querySelectorAll(".nav-link").forEach((link) => {
+        link.addEventListener("click", () => {
+          setTimeout(() => {
+            if (
+              document.getElementById("sec-mappe").classList.contains("active")
+            ) {
+              initMap();
+              if (leafletMap) leafletMap.invalidateSize();
+            }
+          }, 100);
+        });
+      });
+    </script>
+  </body>
+</html>
