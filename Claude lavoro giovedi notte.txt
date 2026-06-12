@@ -1,0 +1,4 @@
+Prossima sessione
+1. trasferimento su cloudflare
+2. rendere visibile tutto sul telefono
+3. nascondere API
