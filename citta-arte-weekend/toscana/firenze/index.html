@@ -3,103 +3,313 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Meteo Firenze Oggi - Previsioni Orarie e 5 Giorni - MeteoPunto.com</title>
-    <meta name="description" content="Previsioni meteo Firenze aggiornate: temperatura, pioggia, vento e previsioni a 5 giorni. Meteo città d'arte per la Toscana su MeteoPunto.com." />
-    <meta name="keywords" content="meteo firenze, previsioni firenze, meteo toscana, meteo oggi firenze, temperature firenze" />
-    <link rel="canonical" href="https://meteopunto.com/citta-arte-weekend/toscana/firenze" />
+    <title>
+      Meteo Firenze Oggi - Previsioni Orarie e 5 Giorni - MeteoPunto.com
+    </title>
+    <meta
+      name="description"
+      content="Previsioni meteo Firenze aggiornate: temperatura, pioggia, vento e previsioni a 5 giorni. Meteo città d'arte per la Toscana su MeteoPunto.com."
+    />
+    <meta
+      name="keywords"
+      content="meteo firenze, previsioni firenze, meteo toscana, meteo oggi firenze, temperature firenze"
+    />
+    <link
+      rel="canonical"
+      href="https://meteopunto.com/citta-arte-weekend/toscana/firenze"
+    />
     <!-- Open Graph -->
     <meta property="og:title" content="Meteo Firenze - MeteoPunto.com" />
-    <meta property="og:description" content="Previsioni meteo aggiornate per Firenze, Toscana." />
-    <meta property="og:url" content="https://meteopunto.com/citta-arte-weekend/toscana/firenze" />
+    <meta
+      property="og:description"
+      content="Previsioni meteo aggiornate per Firenze, Toscana."
+    />
+    <meta
+      property="og:url"
+      content="https://meteopunto.com/citta-arte-weekend/toscana/firenze"
+    />
     <meta property="og:type" content="website" />
     <!-- Schema.org BreadcrumbList -->
     <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        {"@type":"ListItem","position":1,"name":"Home","item":"https://meteopunto.com"},
-        {"@type":"ListItem","position":2,"name":"Città d'Arte & Weekend","item":"https://meteopunto.com/citta-arte-weekend"},
-        {"@type":"ListItem","position":3,"name":"Toscana","item":"https://meteopunto.com/citta-arte-weekend/toscana"},
-        {"@type":"ListItem","position":4,"name":"San Teodoro","item":"https://meteopunto.com/citta-arte-weekend/toscana/firenze"}
-      ]
-    }
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://meteopunto.com"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Città d'Arte",
+            "item": "https://meteopunto.com/citta-arte-weekend"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "Toscana",
+            "item": "https://meteopunto.com/citta-arte-weekend/toscana"
+          },
+          {
+            "@type": "ListItem",
+            "position": 4,
+            "name": "Firenze",
+            "item": "https://meteopunto.com/citta-arte-weekend/toscana/firenze"
+          }
+        ]
+      }
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
     <style>
-      * { font-family: "IBM Plex Sans", sans-serif; }
-      .mono { font-family: "IBM Plex Mono", monospace; }
-      .temp-max { color: #ef4444; }
-      .temp-min { color: #3b82f6; }
-      .rain-val { color: #0369a1; }
-      .ad-slot { background: #e2e8f0; border: 1px dashed #94a3b8; display: flex; align-items: center; justify-content: center; color: #64748b; font-size: 12px; letter-spacing: 0.05em; }
-      .weather-icon-wrap { background: #90c8f0; border-radius: 10px; width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; margin: 0 auto; }
-      .weather-icon-wrap.night { background: #1e3a5f; }
-      .weather-icon-wrap-lg { background: #90c8f0; border-radius: 16px; width: 96px; height: 96px; display: flex; align-items: center; justify-content: center; }
-      .weather-icon-wrap-lg.night { background: #1e3a5f; }
-      .nav-link { cursor: pointer; padding: 6px 14px; border-radius: 4px; font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.8); transition: all 0.15s; }
-      .nav-link:hover { background: rgba(255,255,255,0.18); color: #fff; }
-      .hour-row:hover { background: #f1f5f9; }
-      #search-input:focus { outline: 2px solid #0284c7; outline-offset: 0; }
-      #cookie-banner { position: fixed; bottom: 0; left: 0; right: 0; z-index: 9999; background: #0f172a; color: #e2e8f0; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; font-size: 13px; }
-      .forecast-card { background: #dbeeff; border: 1px solid #a8cef0; border-radius: 8px; padding: 12px; text-align: center; min-width: 90px; }
-      .skeleton { background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 4px; }
-      @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-      #autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: #f0f4f8; border: 1px solid #e2e8f0; border-radius: 0 0 6px 6px; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-      #autocomplete-list div { padding: 9px 14px; cursor: pointer; font-size: 14px; color: #1e293b; }
-      #autocomplete-list div:hover { background: #f1f5f9; }
-      .windy-btn { border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 14px; font-size: 13px; background: #f8fafc; cursor: pointer; transition: all 0.15s; color: #374151; }
-      .windy-btn:hover { background: #e0f0ff; border-color: #7dd3fc; }
-      .windy-btn.active { background: #0284c7; color: #fff; border-color: #0284c7; }
+      * {
+        font-family: "IBM Plex Sans", sans-serif;
+      }
+      .mono {
+        font-family: "IBM Plex Mono", monospace;
+      }
+      .temp-max {
+        color: #ef4444;
+      }
+      .temp-min {
+        color: #3b82f6;
+      }
+      .rain-val {
+        color: #0369a1;
+      }
+      .ad-slot {
+        background: #e2e8f0;
+        border: 1px dashed #94a3b8;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        font-size: 12px;
+        letter-spacing: 0.05em;
+      }
+      .weather-icon-wrap {
+        background: #90c8f0;
+        border-radius: 10px;
+        width: 58px;
+        height: 58px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+      }
+      .weather-icon-wrap.night {
+        background: #1e3a5f;
+      }
+      .weather-icon-wrap-lg {
+        background: #90c8f0;
+        border-radius: 16px;
+        width: 96px;
+        height: 96px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .weather-icon-wrap-lg.night {
+        background: #1e3a5f;
+      }
+      .nav-link {
+        cursor: pointer;
+        padding: 6px 14px;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 500;
+        color: rgba(255, 255, 255, 0.8);
+        transition: all 0.15s;
+      }
+      .nav-link:hover {
+        background: rgba(255, 255, 255, 0.18);
+        color: #fff;
+      }
+      .hour-row:hover {
+        background: #f1f5f9;
+      }
+      #search-input:focus {
+        outline: 2px solid #0284c7;
+        outline-offset: 0;
+      }
+      #cookie-banner {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 9999;
+        background: #0f172a;
+        color: #e2e8f0;
+        padding: 14px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        font-size: 13px;
+      }
+      .forecast-card {
+        background: #dbeeff;
+        border: 1px solid #a8cef0;
+        border-radius: 8px;
+        padding: 12px;
+        text-align: center;
+        min-width: 90px;
+      }
+      .forecast-card-btn:hover {
+        border-color: #7dd3fc;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      }
+      .forecast-card-btn.active-day {
+        border-color: #0284c7;
+        background: #cfe8ff;
+      }
+      .forecast-card-btn .chevron {
+        transition: all 0.15s;
+      }
+      .forecast-card-btn.active-day .chevron {
+        color: #0284c7;
+      }
+      .skeleton {
+        background: linear-gradient(
+          90deg,
+          #f1f5f9 25%,
+          #e2e8f0 50%,
+          #f1f5f9 75%
+        );
+        background-size: 200% 100%;
+        animation: shimmer 1.4s infinite;
+        border-radius: 4px;
+      }
+      @keyframes shimmer {
+        0% {
+          background-position: 200% 0;
+        }
+        100% {
+          background-position: -200% 0;
+        }
+      }
+      #autocomplete-list {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #f0f4f8;
+        border: 1px solid #e2e8f0;
+        border-radius: 0 0 6px 6px;
+        z-index: 100;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+      #autocomplete-list div {
+        padding: 9px 14px;
+        cursor: pointer;
+        font-size: 14px;
+        color: #1e293b;
+      }
+      #autocomplete-list div:hover {
+        background: #f1f5f9;
+      }
+      .windy-btn {
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 6px 14px;
+        font-size: 13px;
+        background: #f8fafc;
+        cursor: pointer;
+        transition: all 0.15s;
+        color: #374151;
+      }
+      .windy-btn:hover {
+        background: #e0f0ff;
+        border-color: #7dd3fc;
+      }
+      .windy-btn.active {
+        background: #0284c7;
+        color: #fff;
+        border-color: #0284c7;
+      }
     </style>
   </head>
   <body class="bg-[#EEF4FB] min-h-screen text-slate-900">
-
     <!-- TOP LEADERBOARD AD -->
-    <div class="w-full flex justify-center py-2 bg-[#F0F4F8] border-b border-slate-200">
-      <div class="ad-slot" style="width:728px;max-width:100%;height:90px">PUBBLICITÀ – 728×90</div>
+    <div
+      class="w-full flex justify-center py-2 bg-[#F0F4F8] border-b border-slate-200"
+    >
+      <div class="ad-slot" style="width: 728px; max-width: 100%; height: 90px">
+        PUBBLICITÀ – 728×90
+      </div>
     </div>
 
     <!-- NAVBAR -->
     <nav class="bg-sky-700 border-b border-sky-800 sticky top-0 z-50">
-      <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-14 gap-4">
+      <div
+        class="max-w-7xl mx-auto px-4 flex items-center justify-between h-14 gap-4"
+      >
         <div class="flex items-center gap-6">
-          <a href="/" class="text-xl font-semibold tracking-tight text-white no-underline">
-            Meteo<span class="text-orange-400">Punto</span><span class="text-sky-200 text-sm">.com</span>
+          <a
+            href="/"
+            class="text-xl font-semibold tracking-tight text-white no-underline"
+          >
+            Meteo<span class="text-orange-400">Punto</span
+            ><span class="text-sky-200 text-sm">.com</span>
           </a>
           <div class="hidden md:flex gap-1">
             <a href="/" class="nav-link">Meteo Italia</a>
-            <a href="/meteo-mare-surf" class="nav-link" style="background:rgba(255,255,255,0.18);color:#fff">Meteo Mare & Surf</a>
+            <a href="/meteo-mare-surf" class="nav-link">Meteo Mare & Surf</a>
             <a href="/meteo-neve-montagna" class="nav-link">Neve e Montagna</a>
-            <a href="/citta-arte-weekend" class="nav-link" style="background:rgba(255,255,255,0.18);color:#fff">Città d'Arte</a>
+            <a
+              href="/citta-arte-weekend"
+              class="nav-link"
+              style="background: rgba(255, 255, 255, 0.18); color: #fff"
+              >Città d'Arte</a
+            >
           </div>
         </div>
-        <div class="flex items-center gap-2 relative" style="min-width:240px">
+        <div class="flex items-center gap-2 relative" style="min-width: 240px">
           <div class="relative flex-1">
-            <input id="search-input" type="text" placeholder="Cerca città..."
+            <input
+              id="search-input"
+              type="text"
+              placeholder="Cerca città..."
               class="w-full border border-slate-300 rounded text-sm px-3 py-2 bg-white"
               autocomplete="off"
               oninput="handleAutocomplete(this.value)"
-              onkeydown="if(event.key==='Enter') searchCity();" />
+              onkeydown="if (event.key === 'Enter') searchCity();"
+            />
             <div id="autocomplete-list" class="hidden"></div>
           </div>
-          <button onclick="searchCity()" class="bg-orange-500 hover:bg-orange-600 text-white text-sm px-3 py-2 rounded font-medium whitespace-nowrap">Cerca</button>
+          <button
+            onclick="searchCity()"
+            class="bg-orange-500 hover:bg-orange-600 text-white text-sm px-3 py-2 rounded font-medium whitespace-nowrap"
+          >
+            Cerca
+          </button>
         </div>
       </div>
     </nav>
-    <div style="height:3px;background:#f57c00"></div>
+    <div style="height: 3px; background: #f57c00"></div>
 
     <!-- BREADCRUMBS -->
     <div class="max-w-7xl mx-auto px-4 py-2 text-xs text-slate-500">
       <a href="/" class="hover:text-sky-600">Home</a>
       <span class="mx-1">›</span>
-      <a href="/meteo-mare-surf" class="hover:text-sky-600">Meteo Mare & Surf</a>
+      <a href="/citta-arte-weekend" class="hover:text-sky-600">Città d'Arte</a>
       <span class="mx-1">›</span>
-      <a href="/citta-arte-weekend/toscana" class="hover:text-sky-600">Toscana</a>
+      <a href="/citta-arte-weekend/toscana" class="hover:text-sky-600"
+        >Toscana</a
+      >
       <span class="mx-1">›</span>
       <span class="text-slate-700 font-medium">Firenze</span>
     </div>
@@ -109,102 +319,241 @@
       <div class="flex gap-6">
         <!-- COLONNA SINISTRA -->
         <div class="flex-1 min-w-0 space-y-5">
-
           <!-- TITOLO PAGINA -->
           <div>
             <h1 class="text-2xl font-semibold text-slate-900">Meteo Firenze</h1>
-            <p class="text-sm text-slate-500 mt-0.5">Previsioni aggiornate · Sardegna · Meteo Mare & Surf</p>
+            <p class="text-sm text-slate-500 mt-0.5">
+              Previsioni aggiornate · Toscana · Città d'Arte
+            </p>
             <div class="flex flex-wrap gap-2 mt-2">
-              <span class="text-xs bg-sky-100 text-sky-700 rounded-full px-2 py-0.5">#turismo</span>
-              <span class="text-xs bg-sky-100 text-sky-700 rounded-full px-2 py-0.5">#arte</span>
-              <span class="text-xs bg-sky-100 text-sky-700 rounded-full px-2 py-0.5">#toscana</span>
+              <span
+                class="text-xs bg-sky-100 text-sky-700 rounded-full px-2 py-0.5"
+                >#turismo</span
+              >
+              <span
+                class="text-xs bg-sky-100 text-sky-700 rounded-full px-2 py-0.5"
+                >#arte</span
+              >
+              <span
+                class="text-xs bg-sky-100 text-sky-700 rounded-full px-2 py-0.5"
+                >#toscana</span
+              >
             </div>
           </div>
 
           <!-- METEO ATTUALE -->
           <div class="bg-[#F0F4F8] border border-slate-200 rounded-lg p-5">
-            <div id="city-name" class="text-2xl font-semibold text-slate-900 skeleton" style="height:32px;width:180px">&nbsp;</div>
-            <div id="last-update" class="text-sm text-slate-500 mt-1 skeleton" style="height:16px;width:280px;margin-top:8px">&nbsp;</div>
+            <div
+              id="city-name"
+              class="text-2xl font-semibold text-slate-900 skeleton"
+              style="height: 32px; width: 180px"
+            >
+              &nbsp;
+            </div>
+            <div
+              id="last-update"
+              class="text-sm text-slate-500 mt-1 skeleton"
+              style="height: 16px; width: 280px; margin-top: 8px"
+            >
+              &nbsp;
+            </div>
             <div class="flex items-center gap-6 mt-4">
               <div id="weather-icon" class="text-5xl">—</div>
               <div>
-                <div id="temp-now" class="text-5xl font-light mono skeleton" style="height:56px;width:110px">&nbsp;</div>
-                <div id="weather-desc" class="text-base text-slate-600 mt-1 skeleton" style="height:18px;width:180px">&nbsp;</div>
+                <div
+                  id="temp-now"
+                  class="text-5xl font-light mono skeleton"
+                  style="height: 56px; width: 110px"
+                >
+                  &nbsp;
+                </div>
+                <div
+                  id="weather-desc"
+                  class="text-base text-slate-600 mt-1 skeleton"
+                  style="height: 18px; width: 180px"
+                >
+                  &nbsp;
+                </div>
               </div>
             </div>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5" id="key-data">
-              <div class="bg-[#F0F4F8] rounded p-3 skeleton" style="height:62px">&nbsp;</div>
-              <div class="bg-[#F0F4F8] rounded p-3 skeleton" style="height:62px">&nbsp;</div>
-              <div class="bg-[#F0F4F8] rounded p-3 skeleton" style="height:62px">&nbsp;</div>
-              <div class="bg-[#F0F4F8] rounded p-3 skeleton" style="height:62px">&nbsp;</div>
+            <div
+              class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-5"
+              id="key-data"
+            >
+              <div
+                class="bg-[#F0F4F8] rounded p-3 skeleton"
+                style="height: 62px"
+              >
+                &nbsp;
+              </div>
+              <div
+                class="bg-[#F0F4F8] rounded p-3 skeleton"
+                style="height: 62px"
+              >
+                &nbsp;
+              </div>
+              <div
+                class="bg-[#F0F4F8] rounded p-3 skeleton"
+                style="height: 62px"
+              >
+                &nbsp;
+              </div>
+              <div
+                class="bg-[#F0F4F8] rounded p-3 skeleton"
+                style="height: 62px"
+              >
+                &nbsp;
+              </div>
             </div>
           </div>
 
           <!-- PREVISIONI ORARIE -->
           <div class="bg-[#F0F4F8] border border-slate-200 rounded-lg p-5">
-            <h2 class="text-base font-semibold text-slate-900 mb-3">Previsioni ora per ora</h2>
-            <div id="hourly-table"><div class="skeleton" style="height:200px;border-radius:6px">&nbsp;</div></div>
+            <h2 class="text-base font-semibold text-slate-900 mb-3">
+              Previsioni ora per ora
+            </h2>
+            <div id="hourly-table">
+              <div class="skeleton" style="height: 200px; border-radius: 6px">
+                &nbsp;
+              </div>
+            </div>
           </div>
 
           <!-- 5 GIORNI -->
           <div class="bg-[#F0F4F8] border border-slate-200 rounded-lg p-5">
-            <h2 class="text-base font-semibold text-slate-900 mb-3">Tendenza a 5 giorni</h2>
+            <h2 class="text-base font-semibold text-slate-900 mb-1">
+              Tendenza a 5 giorni
+            </h2>
+            <p class="text-xs text-slate-500 mb-3">
+              Clicca su un giorno per vedere l'andamento ora per ora
+            </p>
             <div id="forecast-container" class="flex gap-3 flex-wrap">
-              <div class="skeleton forecast-card" style="height:110px;width:90px">&nbsp;</div>
-              <div class="skeleton forecast-card" style="height:110px;width:90px">&nbsp;</div>
-              <div class="skeleton forecast-card" style="height:110px;width:90px">&nbsp;</div>
-              <div class="skeleton forecast-card" style="height:110px;width:90px">&nbsp;</div>
-              <div class="skeleton forecast-card" style="height:110px;width:90px">&nbsp;</div>
+              <div
+                class="skeleton forecast-card"
+                style="height: 130px; width: 90px"
+              >
+                &nbsp;
+              </div>
+              <div
+                class="skeleton forecast-card"
+                style="height: 130px; width: 90px"
+              >
+                &nbsp;
+              </div>
+              <div
+                class="skeleton forecast-card"
+                style="height: 130px; width: 90px"
+              >
+                &nbsp;
+              </div>
+              <div
+                class="skeleton forecast-card"
+                style="height: 130px; width: 90px"
+              >
+                &nbsp;
+              </div>
+              <div
+                class="skeleton forecast-card"
+                style="height: 130px; width: 90px"
+              >
+                &nbsp;
+              </div>
             </div>
           </div>
 
           <!-- MAPPA WINDY -->
           <div class="bg-[#F0F4F8] border border-slate-200 rounded-lg p-5">
-            <h2 class="text-base font-semibold text-slate-900 mb-1">Mappa Meteo</h2>
-            <p class="text-xs text-slate-500 mb-3">Seleziona il layer che vuoi visualizzare:</p>
+            <h2 class="text-base font-semibold text-slate-900 mb-1">
+              Mappa Meteo
+            </h2>
+            <p class="text-xs text-slate-500 mb-3">
+              Seleziona il layer che vuoi visualizzare:
+            </p>
             <div class="flex flex-wrap gap-2 mb-4" id="windy-buttons">
-              <button class="windy-btn active" onclick="setWindyLayer('temperature')">🌡️ Temperatura</button>
-              <button class="windy-btn" onclick="setWindyLayer('rain')">🌧️ Pioggia</button>
-              <button class="windy-btn" onclick="setWindyLayer('wind')">💨 Vento</button>
-              
-              <button class="windy-btn" onclick="setWindyLayer('snowcover')">❄️ Neve</button>
+              <button
+                class="windy-btn active"
+                onclick="setWindyLayer('temperature')"
+              >
+                🌡️ Temperatura
+              </button>
+              <button class="windy-btn" onclick="setWindyLayer('rain')">
+                🌧️ Pioggia
+              </button>
+              <button class="windy-btn" onclick="setWindyLayer('wind')">
+                💨 Vento
+              </button>
+              <button class="windy-btn" onclick="setWindyLayer('clouds')">
+                ☁️ Nuvole
+              </button>
             </div>
-            <div id="windy-map-container" style="width:100%;height:450px;border-radius:8px;overflow:hidden;">
-              <iframe id="windy-iframe"
-                src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=°C&metricWind=km/h&zoom=11&overlay=temperature&product=ecmwf&level=surface&lat=43.7696&lon=11.2558"
-                style="width:100%;height:100%;border:none;"
-                allowfullscreen>
+            <div
+              id="windy-map-container"
+              style="
+                width: 100%;
+                height: 450px;
+                border-radius: 8px;
+                overflow: hidden;
+              "
+            >
+              <iframe
+                id="windy-iframe"
+                src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=°C&metricWind=km/h&zoom=12&overlay=temperature&product=ecmwf&level=surface&lat=43.7696&lon=11.2558"
+                style="width: 100%; height: 100%; border: none"
+                allowfullscreen
+              >
               </iframe>
             </div>
           </div>
 
           <!-- IN-FEED AD -->
           <div class="flex justify-center">
-            <div class="ad-slot w-full" style="height:90px">PUBBLICITÀ IN-FEED – 728×90</div>
+            <div class="ad-slot w-full" style="height: 90px">
+              PUBBLICITÀ IN-FEED – 728×90
+            </div>
           </div>
-
         </div>
 
         <!-- COLONNA DESTRA: AD -->
-        <div class="hidden lg:block" style="width:300px;flex-shrink:0">
+        <div class="hidden lg:block" style="width: 300px; flex-shrink: 0">
           <div class="sticky top-20">
-            <div class="ad-slot" style="width:300px;height:600px;border-radius:8px">PUBBLICITÀ<br>300×600</div>
+            <div
+              class="ad-slot"
+              style="width: 300px; height: 600px; border-radius: 8px"
+            >
+              PUBBLICITÀ<br />300×600
+            </div>
           </div>
         </div>
       </div>
     </main>
 
     <!-- FOOTER -->
-    <footer class="border-t border-slate-200 bg-[#F0F4F8] mt-8 py-5 text-center text-xs text-slate-400">
+    <footer
+      class="border-t border-slate-200 bg-[#F0F4F8] mt-8 py-5 text-center text-xs text-slate-400"
+    >
       © 2026 MeteoPunto.com — Tutti i diritti riservati
     </footer>
 
     <!-- COOKIE BANNER -->
     <div id="cookie-banner">
-      <span>🍪 MeteoPunto.com utilizza cookie tecnici e, previo consenso, cookie pubblicitari e di analisi. <a href="#" class="underline text-sky-400">Informativa Privacy</a></span>
+      <span
+        >🍪 MeteoPunto.com utilizza cookie tecnici e, previo consenso, cookie
+        pubblicitari e di analisi.
+        <a href="#" class="underline text-sky-400">Informativa Privacy</a></span
+      >
       <div class="flex gap-2">
-        <button onclick="acceptCookies(false)" class="px-4 py-1.5 rounded border border-slate-500 text-sm hover:bg-slate-700 transition-colors">Solo essenziali</button>
-        <button onclick="acceptCookies(true)" class="px-4 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-sm font-medium transition-colors">Accetta tutti</button>
+        <button
+          onclick="acceptCookies(false)"
+          class="px-4 py-1.5 rounded border border-slate-500 text-sm hover:bg-slate-700 transition-colors"
+        >
+          Solo essenziali
+        </button>
+        <button
+          onclick="acceptCookies(true)"
+          class="px-4 py-1.5 rounded bg-sky-600 hover:bg-sky-500 text-sm font-medium transition-colors"
+        >
+          Accetta tutti
+        </button>
       </div>
     </div>
 
@@ -216,7 +565,7 @@
         name: "Firenze",
         lat: 43.7696,
         lon: 11.2558,
-        zoom: 12
+        zoom: 12,
       };
 
       const API_BASE = "/api/owm";
@@ -228,7 +577,9 @@
       function setWindyLayer(layer) {
         const iframe = document.getElementById("windy-iframe");
         iframe.src = `https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=mm&metricTemp=°C&metricWind=km/h&zoom=${CITY_CONFIG.zoom}&overlay=${layer}&product=ecmwf&level=surface&lat=${CITY_CONFIG.lat}&lon=${CITY_CONFIG.lon}`;
-        document.querySelectorAll(".windy-btn").forEach(b => b.classList.remove("active"));
+        document
+          .querySelectorAll(".windy-btn")
+          .forEach((b) => b.classList.remove("active"));
         event.target.classList.add("active");
       }
 
@@ -242,22 +593,29 @@
           const obj = JSON.parse(raw);
           if (Date.now() - obj.ts > CACHE_TTL) return null;
           return obj.data;
-        } catch(e) { return null; }
+        } catch (e) {
+          return null;
+        }
       }
 
       function setCache(key, data) {
         try {
-          localStorage.setItem("mp_" + key, JSON.stringify({ ts: Date.now(), data }));
-        } catch(e) {}
+          localStorage.setItem(
+            "mp_" + key,
+            JSON.stringify({ ts: Date.now(), data }),
+          );
+        } catch (e) {}
       }
 
       // ============================================================
       // HELPERS
       // ============================================================
-      function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ""; }
+      function capitalize(s) {
+        return s ? s.charAt(0).toUpperCase() + s.slice(1) : "";
+      }
 
       function degToDir(deg) {
-        const dirs = ["N","NE","E","SE","S","SO","O","NO"];
+        const dirs = ["N", "NE", "E", "SE", "S", "SO", "O", "NO"];
         return dirs[Math.round(deg / 45) % 8];
       }
 
@@ -283,21 +641,38 @@
 
       function handleAutocomplete(val) {
         const list = document.getElementById("autocomplete-list");
-        if (!val || val.length < 2) { list.classList.add("hidden"); return; }
+        if (!val || val.length < 2) {
+          list.classList.add("hidden");
+          return;
+        }
         clearTimeout(nominatimDebounce);
         nominatimDebounce = setTimeout(async () => {
           try {
             const results = await fetchNominatim(val);
             nominatimResults = results;
-            if (!results.length) { list.classList.add("hidden"); return; }
-            list.innerHTML = results.map((r, i) => {
-              const addr = r.address;
-              const primary = addr.village || addr.hamlet || addr.city || addr.town || r.display_name.split(",")[0];
-              const secondary = [addr.county, addr.state, addr.country].filter(Boolean).join(", ");
-              return `<div onclick="selectNominatimResult(${i})"><span class="font-medium">${primary}</span> <span class="text-slate-400 text-xs">${secondary}</span></div>`;
-            }).join("");
+            if (!results.length) {
+              list.classList.add("hidden");
+              return;
+            }
+            list.innerHTML = results
+              .map((r, i) => {
+                const addr = r.address;
+                const primary =
+                  addr.village ||
+                  addr.hamlet ||
+                  addr.city ||
+                  addr.town ||
+                  r.display_name.split(",")[0];
+                const secondary = [addr.county, addr.state, addr.country]
+                  .filter(Boolean)
+                  .join(", ");
+                return `<div onclick="selectNominatimResult(${i})"><span class="font-medium">${primary}</span> <span class="text-slate-400 text-xs">${secondary}</span></div>`;
+              })
+              .join("");
             list.classList.remove("hidden");
-          } catch(e) { list.classList.add("hidden"); }
+          } catch (e) {
+            list.classList.add("hidden");
+          }
         }, 400);
       }
 
@@ -305,14 +680,22 @@
         const r = nominatimResults[index];
         if (!r) return;
         const addr = r.address;
-        const name = addr.village || addr.hamlet || addr.city || addr.town || r.display_name.split(",")[0];
+        const name =
+          addr.village ||
+          addr.hamlet ||
+          addr.city ||
+          addr.town ||
+          r.display_name.split(",")[0];
         document.getElementById("search-input").value = name;
         document.getElementById("autocomplete-list").classList.add("hidden");
         loadWeather({ lat: parseFloat(r.lat), lon: parseFloat(r.lon), name });
       }
 
-      document.addEventListener("click", e => {
-        if (!e.target.closest("#search-input") && !e.target.closest("#autocomplete-list"))
+      document.addEventListener("click", (e) => {
+        if (
+          !e.target.closest("#search-input") &&
+          !e.target.closest("#autocomplete-list")
+        )
           document.getElementById("autocomplete-list").classList.add("hidden");
       });
 
@@ -322,12 +705,22 @@
         document.getElementById("autocomplete-list").classList.add("hidden");
         try {
           const results = await fetchNominatim(q);
-          if (!results || !results.length) { alert("Località non trovata."); return; }
+          if (!results || !results.length) {
+            alert("Località non trovata.");
+            return;
+          }
           const r = results[0];
           const addr = r.address;
-          const name = addr.village || addr.hamlet || addr.city || addr.town || r.display_name.split(",")[0];
+          const name =
+            addr.village ||
+            addr.hamlet ||
+            addr.city ||
+            addr.town ||
+            r.display_name.split(",")[0];
           loadWeather({ lat: parseFloat(r.lat), lon: parseFloat(r.lon), name });
-        } catch(e) { alert("Errore di connessione."); }
+        } catch (e) {
+          alert("Errore di connessione.");
+        }
       }
 
       // ============================================================
@@ -342,14 +735,24 @@
         let fData = getCached(fKey);
         const fetches = [];
 
-        if (!wData) fetches.push(
-          fetch(`${API_BASE}?type=weather&lat=${lat}&lon=${lon}`)
-            .then(r => r.json()).then(d => { wData = d; setCache(wKey, d); })
-        );
-        if (!fData) fetches.push(
-          fetch(`${API_BASE}?type=forecast&lat=${lat}&lon=${lon}`)
-            .then(r => r.json()).then(d => { fData = d; setCache(fKey, d); })
-        );
+        if (!wData)
+          fetches.push(
+            fetch(`${API_BASE}?type=weather&lat=${lat}&lon=${lon}`)
+              .then((r) => r.json())
+              .then((d) => {
+                wData = d;
+                setCache(wKey, d);
+              }),
+          );
+        if (!fData)
+          fetches.push(
+            fetch(`${API_BASE}?type=forecast&lat=${lat}&lon=${lon}`)
+              .then((r) => r.json())
+              .then((d) => {
+                fData = d;
+                setCache(fKey, d);
+              }),
+          );
 
         await Promise.all(fetches);
         renderCurrent(wData, name);
@@ -362,26 +765,40 @@
       // ============================================================
       function renderCurrent(d, name) {
         const now = new Date();
-        const fmt = now.toLocaleDateString("it-IT", { weekday: "long", day: "numeric", month: "long" }) + " alle ore " + now.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+        const fmt =
+          now.toLocaleDateString("it-IT", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          }) +
+          " alle ore " +
+          now.toLocaleTimeString("it-IT", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
 
         const cityEl = document.getElementById("city-name");
         cityEl.innerHTML = `${name}, <span class="text-slate-400 text-lg font-normal">${d.sys?.country || "IT"}</span>`;
-        cityEl.classList.remove("skeleton"); cityEl.style = "";
+        cityEl.classList.remove("skeleton");
+        cityEl.style = "";
 
         const updEl = document.getElementById("last-update");
         updEl.textContent = "Aggiornamento: " + fmt;
-        updEl.classList.remove("skeleton"); updEl.style = "";
+        updEl.classList.remove("skeleton");
+        updEl.style = "";
 
         document.getElementById("weather-icon").innerHTML =
           `<div class="weather-icon-wrap-lg ${iconNightClass(d.weather[0].icon)}"><img src="${meteoconUrl(d.weather[0].icon)}" alt="${d.weather[0].description}" width="72" height="72"></div>`;
 
         const tempEl = document.getElementById("temp-now");
         tempEl.textContent = Math.round(d.main.temp) + "°C";
-        tempEl.classList.remove("skeleton"); tempEl.style = "";
+        tempEl.classList.remove("skeleton");
+        tempEl.style = "";
 
         const descEl = document.getElementById("weather-desc");
         descEl.textContent = capitalize(d.weather[0].description);
-        descEl.classList.remove("skeleton"); descEl.style = "";
+        descEl.classList.remove("skeleton");
+        descEl.style = "";
 
         const windDir = degToDir(d.wind.deg);
         const windKmh = Math.round(d.wind.speed * 3.6);
@@ -394,10 +811,9 @@
       }
 
       // ============================================================
-      // RENDER ORARIO
+      // RENDER ORARIO  (buildHourlyTable accetta un sottoinsieme di slot)
       // ============================================================
-      function renderHourly(f) {
-        const slots = f.list.slice(0, 8);
+      function buildHourlyTable(slots) {
         let html = `<div class="overflow-x-auto"><table class="w-full text-sm border-collapse" style="min-width:500px;">
           <thead><tr class="border-b border-slate-200 text-xs text-slate-500 uppercase tracking-wide">
             <th class="text-left py-2 px-3 font-medium">Ora</th>
@@ -408,13 +824,17 @@
             <th class="text-right py-2 px-3 font-medium">Umidità</th>
           </tr></thead><tbody>`;
 
-        slots.forEach(s => {
+        slots.forEach((s) => {
           const t = new Date(s.dt * 1000);
-          const hh = t.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" });
+          const hh = t.toLocaleTimeString("it-IT", {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
           const rain = ((s.rain && s.rain["3h"]) || 0).toFixed(1);
           const wind = Math.round(s.wind.speed * 3.6);
           const dir = degToDir(s.wind.deg);
-          const rainClass = parseFloat(rain) > 0 ? "rain-val font-semibold" : "text-slate-400";
+          const rainClass =
+            parseFloat(rain) > 0 ? "rain-val font-semibold" : "text-slate-400";
           html += `<tr class="hour-row border-b border-slate-100">
             <td class="py-2.5 px-3 mono font-medium text-slate-700">${hh}</td>
             <td class="py-2.5 px-3 text-center"><div class="weather-icon-wrap ${iconNightClass(s.weather[0].icon)}"><img src="${meteoconUrl(s.weather[0].icon)}" alt="" width="44" height="44"></div></td>
@@ -425,39 +845,107 @@
           </tr>`;
         });
         html += "</tbody></table></div>";
-        document.getElementById("hourly-table").innerHTML = html;
+        return html;
+      }
+
+      function renderHourly(f) {
+        document.getElementById("hourly-table").innerHTML = buildHourlyTable(
+          f.list.slice(0, 8),
+        );
       }
 
       // ============================================================
-      // RENDER 5 GIORNI
+      // RENDER 5 GIORNI  (card cliccabili + dettaglio a fisarmonica)
       // ============================================================
+      let _forecastByDay = {};
+      let _openDay = null;
+
       function renderForecast(f) {
         const daily = {};
-        f.list.forEach(s => {
+        _forecastByDay = {};
+        f.list.forEach((s) => {
           const d = new Date(s.dt * 1000).toISOString().split("T")[0];
           if (!daily[d]) daily[d] = { temps: [], rain: 0, icon: s.weather[0] };
           daily[d].temps.push(s.main.temp);
           daily[d].rain += (s.rain && s.rain["3h"]) || 0;
-          if (new Date(s.dt * 1000).getHours() >= 12) daily[d].icon = s.weather[0];
+          if (new Date(s.dt * 1000).getHours() >= 12)
+            daily[d].icon = s.weather[0];
+          (_forecastByDay[d] = _forecastByDay[d] || []).push(s);
         });
 
         const days = Object.entries(daily).slice(0, 5);
-        let html = "";
+        let cards = "";
         days.forEach(([date, v], i) => {
           const dt = new Date(date + "T12:00:00");
-          const label = i === 0 ? "Oggi" : dt.toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "2-digit" });
+          const label =
+            i === 0
+              ? "Oggi"
+              : dt.toLocaleDateString("it-IT", {
+                  weekday: "short",
+                  day: "2-digit",
+                  month: "2-digit",
+                });
           const min = Math.round(Math.min(...v.temps));
           const max = Math.round(Math.max(...v.temps));
           const rain = v.rain.toFixed(1);
           const hasRain = parseFloat(rain) > 0;
-          html += `<div class="forecast-card">
+          cards += `<div class="forecast-card forecast-card-btn" data-day="${date}" style="cursor:pointer;transition:all .15s;">
             <div class="text-xs text-slate-500 mb-1 font-medium">${label}</div>
             <div class="weather-icon-wrap ${iconNightClass(v.icon.icon)}" style="width:70px;height:70px;border-radius:12px;margin:0 auto 6px;"><img src="${meteoconUrl(v.icon.icon)}" alt="" width="56" height="56"></div>
             <div class="text-sm"><span class="temp-max font-semibold">${max}°</span> <span class="text-slate-300">/</span> <span class="temp-min">${min}°</span></div>
             <div class="text-xs mt-1 ${hasRain ? "rain-val font-medium" : "text-slate-300"}">${rain} mm</div>
+            <div class="text-xs mt-2 text-sky-600 font-medium chevron">Dettaglio &#9662;</div>
           </div>`;
         });
-        document.getElementById("forecast-container").innerHTML = html;
+
+        const container = document.getElementById("forecast-container");
+        container.innerHTML = `<div class="flex gap-3 flex-wrap w-full">${cards}</div>
+           <div id="day-detail" class="w-full mt-4" style="display:none;"></div>`;
+
+        // Collego i click via addEventListener (piu robusto degli onclick inline)
+        _openDay = null;
+        container.querySelectorAll(".forecast-card-btn").forEach((card) => {
+          card.addEventListener("click", () => {
+            openDay(card.getAttribute("data-day"));
+          });
+        });
+
+        // Apro di default il primo giorno
+        if (days.length) openDay(days[0][0]);
+      }
+
+      function openDay(date) {
+        const detail = document.getElementById("day-detail");
+        const cards = document.querySelectorAll(".forecast-card-btn");
+        if (!detail) return;
+
+        // Click sul giorno gia aperto -> chiudo
+        if (_openDay === date) {
+          detail.style.display = "none";
+          _openDay = null;
+          cards.forEach((c) => c.classList.remove("active-day"));
+          return;
+        }
+
+        _openDay = date;
+        const slots = _forecastByDay[date] || [];
+        const dt = new Date(date + "T12:00:00");
+        const titolo = dt.toLocaleDateString("it-IT", {
+          weekday: "long",
+          day: "2-digit",
+          month: "long",
+        });
+        const titoloCap = titolo.charAt(0).toUpperCase() + titolo.slice(1);
+
+        detail.innerHTML = `<div class="bg-white border border-slate-200 rounded-lg p-4">
+             <div class="text-sm font-semibold text-slate-700 mb-3">Andamento di ${titoloCap}</div>
+             ${buildHourlyTable(slots)}
+           </div>`;
+        detail.style.display = "block";
+
+        cards.forEach((c) => {
+          c.classList.toggle("active-day", c.getAttribute("data-day") === date);
+        });
       }
 
       // ============================================================
