@@ -599,7 +599,7 @@
         zoom: 12,
       };
 
-      const API_KEY = "c1ecc4a7c6af1a66ed5a5dd7428d07ff";
+      const API_BASE = "/api/owm";
       const CACHE_TTL = 30 * 60 * 1000;
 
       // ============================================================
@@ -769,7 +769,7 @@
         if (!wData)
           fetches.push(
             fetch(
-              `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=it`,
+              `${API_BASE}?type=weather&lat=${lat}&lon=${lon}`,
             )
               .then((r) => r.json())
               .then((d) => {
@@ -780,7 +780,7 @@
         if (!fData)
           fetches.push(
             fetch(
-              `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=it`,
+              `${API_BASE}?type=forecast&lat=${lat}&lon=${lon}`,
             )
               .then((r) => r.json())
               .then((d) => {

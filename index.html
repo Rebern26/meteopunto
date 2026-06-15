@@ -713,7 +713,7 @@
       // ============================================================
       // CONFIGURAZIONE
       // ============================================================
-      const API_KEY = "c1ecc4a7c6af1a66ed5a5dd7428d07ff";
+      const API_BASE = "/api/owm";
       const CACHE_TTL = 30 * 60 * 1000; // 30 minuti in ms
 
       // ============================================================
@@ -964,7 +964,7 @@
           console.log(`[MeteoPunto API] Meteo corrente chiamata per: ${name}`);
           fetches.push(
             fetch(
-              `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=it`,
+              `${API_BASE}?type=weather&lat=${lat}&lon=${lon}`,
             )
               .then((r) => r.json())
               .then((d) => {
@@ -978,7 +978,7 @@
           console.log(`[MeteoPunto API] Previsioni chiamata per: ${name}`);
           fetches.push(
             fetch(
-              `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=it`,
+              `${API_BASE}?type=forecast&lat=${lat}&lon=${lon}`,
             )
               .then((r) => r.json())
               .then((d) => {
@@ -1694,7 +1694,7 @@
             } catch (e) {}
 
             const wRes = await fetch(
-              `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&appid=${API_KEY}&units=metric&lang=it`,
+              `${API_BASE}?type=weather&lat=${lat}&lon=${lng}`,
             );
             const wData = await wRes.json();
             showMapWeatherPanel(name, wData, lat, lng);
