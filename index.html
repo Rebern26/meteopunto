@@ -812,6 +812,7 @@
               .map((r, i) => {
                 const addr = r.address;
                 const primary =
+                  r.name ||
                   addr.village ||
                   addr.hamlet ||
                   addr.suburb ||
@@ -841,6 +842,7 @@
         if (!r) return;
         const addr = r.address;
         const name =
+          r.name ||
           addr.village ||
           addr.hamlet ||
           addr.suburb ||
@@ -925,6 +927,7 @@
             const r = results[0];
             const addr = r.address;
             const name =
+              r.name ||
               addr.village ||
               addr.hamlet ||
               addr.suburb ||
@@ -963,9 +966,7 @@
         if (!wData) {
           console.log(`[MeteoPunto API] Meteo corrente chiamata per: ${name}`);
           fetches.push(
-            fetch(
-              `${API_BASE}?type=weather&lat=${lat}&lon=${lon}`,
-            )
+            fetch(`${API_BASE}?type=weather&lat=${lat}&lon=${lon}`)
               .then((r) => r.json())
               .then((d) => {
                 wData = d;
@@ -977,9 +978,7 @@
         if (!fData) {
           console.log(`[MeteoPunto API] Previsioni chiamata per: ${name}`);
           fetches.push(
-            fetch(
-              `${API_BASE}?type=forecast&lat=${lat}&lon=${lon}`,
-            )
+            fetch(`${API_BASE}?type=forecast&lat=${lat}&lon=${lon}`)
               .then((r) => r.json())
               .then((d) => {
                 fData = d;
