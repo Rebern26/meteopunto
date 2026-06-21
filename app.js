@@ -10,32 +10,15 @@
 /* ═══════════════════════════════════════
    CONFIGURAZIONE
 ═══════════════════════════════════════ */
-const IS_DEV = window.location.hostname === '127.0.0.1'
-            || window.location.hostname === 'localhost';
-
-const WORKER_BASE = IS_DEV
-  ? 'http://127.0.0.1:8787'
-  : 'https://meteopunto.com';
-
 const CONFIG = {
-  GEO_URL:    `${WORKER_BASE}/api/geo`,
-  METEO_URL:  `${WORKER_BASE}/api/weather`,
-  MARINE_URL: `${WORKER_BASE}/api/marine`,
+  GEO_URL: "https://geocoding-api.open-meteo.com/v1/search",
+  METEO_URL: "https://api.open-meteo.com/v1/forecast",
+  MARINE_URL: "https://marine-api.open-meteo.com/v1/marine",
   FORECAST_DAYS: 16,
-  DEBOUNCE_MS:   350,
-  MIN_CHARS:     3,
-  MAX_RESULTS:   8,
-  LANGUAGE:      'it',
-  FASCE: [
-    { key:'notte',      label:'NOTTE',      hour:3,  icon:'🌙', cssClass:'notte'      },
-    { key:'mattina',    label:'MATTINA',    hour:9,  icon:'🌅', cssClass:'mattina'    },
-    { key:'pomeriggio', label:'POMERIGGIO', hour:15, icon:'☀️', cssClass:'pomeriggio' },
-    { key:'sera',       label:'SERA',       hour:21, icon:'🌆', cssClass:'sera'       },
-  ],
-};
+  DEBOUNCE_MS: 350,
+  MIN_CHARS: 3,
   MAX_RESULTS: 8,
   LANGUAGE: "it",
-  // Ore delle 4 fasce orarie (indice nell'array hourly)
   FASCE: [
     { key: "notte", label: "NOTTE", hour: 3, icon: "🌙", cssClass: "notte" },
     {
@@ -205,18 +188,20 @@ async function fetchLocations(query) {
   if (state.abortController) state.abortController.abort();
   state.abortController = new AbortController();
   const params = new URLSearchParams({
-    q:     query.trim(),
-    lang:  CONFIG.LANGUAGE,
+    q: query.trim(),
+    lang: CONFIG.LANGUAGE,
     count: CONFIG.MAX_RESULTS,
   });
   try {
     showAutocompleteLoading();
-    const res = await fetch(`${CONFIG.GEO_URL}?${params}`, {signal: state.abortController.signal});
+    const res = await fetch(`${CONFIG.GEO_URL}?${params}`, {
+      signal: state.abortController.signal,
+    });
     if (!res.ok) throw new Error(res.status);
     const data = await res.json();
     return data.results || [];
-  } catch(e) {
-    if (e.name === 'AbortError') return null;
+  } catch (e) {
+    if (e.name === "AbortError") return null;
     showAutocompleteError();
     return [];
   }
@@ -229,10 +214,10 @@ async function fetchWeather(loc) {
   const params = new URLSearchParams({
     lat: loc.latitude,
     lon: loc.longitude,
-    tz:  loc.timezone || 'Europe/Rome',
+    tz: loc.timezone || "Europe/Rome",
   });
   const res = await fetch(`${CONFIG.METEO_URL}?${params}`);
-  if (!res.ok) throw new Error('Errore API meteo: ' + res.status);
+  if (!res.ok) throw new Error("Errore API meteo: " + res.status);
   return res.json();
 }
 
@@ -245,13 +230,13 @@ async function fetchMarine(loc) {
   const params = new URLSearchParams({
     lat: loc.latitude,
     lon: loc.longitude,
-    tz:  loc.timezone || 'Europe/Rome',
+    tz: loc.timezone || "Europe/Rome",
   });
   try {
     const res = await fetch(`${CONFIG.MARINE_URL}?${params}`);
     if (!res.ok) return null;
     const data = await res.json();
-    const hasData = data.hourly?.wave_height?.some(v => v !== null);
+    const hasData = data.hourly?.wave_height?.some((v) => v !== null);
     return hasData ? data : null;
   } catch {
     return null;
