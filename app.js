@@ -19,6 +19,7 @@ const CONFIG = {
   MIN_CHARS: 3,
   MAX_RESULTS: 8,
   LANGUAGE: "it",
+  // Ore delle 4 fasce orarie (indice nell'array hourly)
   FASCE: [
     { key: "notte", label: "NOTTE", hour: 3, icon: "🌙", cssClass: "notte" },
     {
@@ -188,9 +189,10 @@ async function fetchLocations(query) {
   if (state.abortController) state.abortController.abort();
   state.abortController = new AbortController();
   const params = new URLSearchParams({
-    q: query.trim(),
-    lang: CONFIG.LANGUAGE,
+    name: query.trim(),
     count: CONFIG.MAX_RESULTS,
+    language: CONFIG.LANGUAGE,
+    format: "json",
   });
   try {
     showAutocompleteLoading();
@@ -212,9 +214,30 @@ async function fetchLocations(query) {
 ═══════════════════════════════════════ */
 async function fetchWeather(loc) {
   const params = new URLSearchParams({
-    lat: loc.latitude,
-    lon: loc.longitude,
-    tz: loc.timezone || "Europe/Rome",
+    latitude: loc.latitude,
+    longitude: loc.longitude,
+    hourly: [
+      "temperature_2m",
+      "apparent_temperature",
+      "weathercode",
+      "windspeed_10m",
+      "winddirection_10m",
+      "uv_index",
+      "relativehumidity_2m",
+    ].join(","),
+    daily: [
+      "weathercode",
+      "temperature_2m_max",
+      "temperature_2m_min",
+      "sunrise",
+      "sunset",
+      "uv_index_max",
+      "windspeed_10m_max",
+    ].join(","),
+    current_weather: "true",
+    timezone: loc.timezone || "Europe/Rome",
+    wind_speed_unit: "kmh",
+    forecast_days: CONFIG.FORECAST_DAYS,
   });
   const res = await fetch(`${CONFIG.METEO_URL}?${params}`);
   if (!res.ok) throw new Error("Errore API meteo: " + res.status);
@@ -228,18 +251,21 @@ async function fetchWeather(loc) {
 ═══════════════════════════════════════ */
 async function fetchMarine(loc) {
   const params = new URLSearchParams({
-    lat: loc.latitude,
-    lon: loc.longitude,
-    tz: loc.timezone || "Europe/Rome",
+    latitude: loc.latitude,
+    longitude: loc.longitude,
+    hourly: "wave_height,wave_direction,wave_period,wind_wave_height",
+    timezone: loc.timezone || "Europe/Rome",
+    forecast_days: CONFIG.FORECAST_DAYS,
   });
   try {
     const res = await fetch(`${CONFIG.MARINE_URL}?${params}`);
     if (!res.ok) return null;
     const data = await res.json();
+    // Se tutti i valori sono null = entroterra
     const hasData = data.hourly?.wave_height?.some((v) => v !== null);
     return hasData ? data : null;
   } catch {
-    return null;
+    return null; // silenziosamente: entroterra o errore rete
   }
 }
 
