@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="MeteoPunto.com – Previsioni meteo fino a 16 giorni per tutta Italia e il mondo."
+    />
+    <meta name="theme-color" content="#00A8E8" />
+    <title>MeteoPunto.com – Previsioni Meteo Italia</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- NAVBAR -->
+    <header class="site-header" role="banner">
+      <nav class="navbar" aria-label="Navigazione principale">
+        <div class="nav-container">
+          <a href="/" class="nav-logo" aria-label="MeteoPunto.com – Homepage">
+            <span class="logo-icon" aria-hidden="true">🌤️</span>
+            <span class="logo-text">Meteo<strong>Punto.com</strong></span>
+          </a>
+          <ul class="nav-links" role="list">
+            <li>
+              <a href="#" class="nav-link active" aria-current="page">Italia</a>
+            </li>
+            <li><a href="#" class="nav-link">Europa</a></li>
+            <li><a href="#" class="nav-link">Mondo</a></li>
+            <li><a href="#" class="nav-link">Radar</a></li>
+            <li><a href="#" class="nav-link">Mappe</a></li>
+            <li><a href="#" class="nav-link">Allerte</a></li>
+          </ul>
+          <div class="nav-actions">
+            <a href="#" class="btn-nav-cta">Il mio meteo</a>
+            <button
+              class="hamburger"
+              aria-label="Apri menu"
+              aria-expanded="false"
+              aria-controls="mobile-menu"
+            >
+              <span></span><span></span><span></span>
+            </button>
+          </div>
+        </div>
+      </nav>
+      <div class="mobile-menu" id="mobile-menu" aria-hidden="true">
+        <ul role="list">
+          <li><a href="#" class="nav-link">Italia</a></li>
+          <li><a href="#" class="nav-link">Europa</a></li>
+          <li><a href="#" class="nav-link">Mondo</a></li>
+          <li><a href="#" class="nav-link">Radar</a></li>
+          <li><a href="#" class="nav-link">Mappe</a></li>
+          <li><a href="#" class="nav-link">Allerte</a></li>
+          <li><a href="#" class="nav-link">Il mio meteo</a></li>
+        </ul>
+      </div>
+    </header>
+
+    <!-- HERO SEARCH -->
+    <section class="search-hero" aria-labelledby="search-heading">
+      <div class="search-hero-inner">
+        <h1 id="search-heading" class="search-hero-title">
+          Dove vuoi sapere che tempo fa?
+        </h1>
+        <p class="search-hero-subtitle">
+          Previsioni accurate fino a 16 giorni, per ogni città d'Italia e del
+          mondo.
+        </p>
+        <div class="search-wrapper" role="search">
+          <label for="city-search" class="sr-only">Cerca una città</label>
+          <div class="search-bar-group">
+            <span class="search-icon" aria-hidden="true">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </span>
+            <input
+              type="search"
+              id="city-search"
+              class="search-input"
+              placeholder="Es. Roma, Cortina d'Ampezzo, Positano…"
+              autocomplete="off"
+              aria-autocomplete="list"
+              aria-controls="autocomplete-list"
+              aria-haspopup="listbox"
+              aria-expanded="false"
+            />
+            <button class="search-btn" type="button" aria-label="Cerca meteo">
+              Cerca
+            </button>
+          </div>
+          <ul
+            id="autocomplete-list"
+            class="autocomplete-results"
+            role="listbox"
+            aria-label="Suggerimenti città"
+            hidden
+          ></ul>
+        </div>
+        <div class="quick-tags" aria-label="Città più cercate">
+          <span class="quick-label">Ricerche rapide:</span>
+          <button class="tag-btn" type="button" data-city="Roma">Roma</button>
+          <button class="tag-btn" type="button" data-city="Milano">
+            Milano
+          </button>
+          <button class="tag-btn" type="button" data-city="Napoli">
+            Napoli
+          </button>
+          <button class="tag-btn" type="button" data-city="Palermo">
+            Palermo
+          </button>
+          <button class="tag-btn" type="button" data-city="Torino">
+            Torino
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAIN DASHBOARD -->
+    <main id="main-content" class="dashboard" aria-label="Dashboard meteo">
+      <!-- SEZIONE: Meteo Attuale -->
+      <section class="dashboard-section" aria-labelledby="current-heading">
+        <div class="section-container">
+          <h2 id="current-heading" class="section-title">
+            <span class="section-eyebrow">In tempo reale</span>Meteo Adesso
+          </h2>
+          <div
+            class="current-weather-card card"
+            id="current-weather-panel"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <div class="card-empty-state">
+              <span class="empty-icon" aria-hidden="true">🔍</span>
+              <p>Cerca una città per vedere il meteo attuale</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══════════════════════════════════════
+         SEZIONE FASE 3: PREVISIONI 16 GIORNI
+    ═══════════════════════════════════════ -->
+      <section
+        class="dashboard-section forecast-section"
+        id="forecast-section"
+        aria-labelledby="forecast-heading"
+        hidden
+      >
+        <div class="section-container">
+          <h2 id="forecast-heading" class="section-title">
+            <span class="section-eyebrow">Fino a 16 giorni</span>Previsioni
+            Dettagliate
+          </h2>
+
+          <!-- TAB GIORNI (16 giorni) -->
+          <div
+            class="day-tabs-wrapper"
+            role="region"
+            aria-label="Seleziona giorno"
+          >
+            <div class="day-tabs-scroll">
+              <div
+                class="day-tabs"
+                id="day-tabs"
+                role="tablist"
+                aria-label="Giorni disponibili"
+              >
+                <!-- Popolato da app.js -->
+              </div>
+            </div>
+          </div>
+
+          <!-- GRIGLIA 4 FASCE ORARIE -->
+          <div
+            class="timeslot-grid"
+            id="timeslot-grid"
+            aria-label="Fasce orarie del giorno selezionato"
+          >
+            <!-- Popolato da app.js -->
+          </div>
+
+          <!-- SUB-TAB SERVIZI -->
+          <div
+            class="service-tabs-bar"
+            role="tablist"
+            aria-label="Tipo di dato meteo"
+          >
+            <button
+              class="service-tab active"
+              role="tab"
+              aria-selected="true"
+              data-service="forecast"
+              aria-controls="service-panel"
+            >
+              🌤️ Previsioni
+            </button>
+            <button
+              class="service-tab"
+              role="tab"
+              aria-selected="false"
+              data-service="temperature"
+              aria-controls="service-panel"
+            >
+              🌡️ Temperature
+            </button>
+            <button
+              class="service-tab"
+              role="tab"
+              aria-selected="false"
+              data-service="wind-sea"
+              aria-controls="service-panel"
+            >
+              💨 Mari e Vento
+            </button>
+            <button
+              class="service-tab"
+              role="tab"
+              aria-selected="false"
+              data-service="uv"
+              aria-controls="service-panel"
+            >
+              ☀️ UV
+            </button>
+          </div>
+
+          <!-- PANNELLO DATI SERVIZIO ATTIVO -->
+          <div
+            class="service-panel"
+            id="service-panel"
+            role="tabpanel"
+            aria-live="polite"
+          >
+            <!-- Popolato da app.js -->
+          </div>
+        </div>
+      </section>
+
+      <!-- SEZIONE: Mappa -->
+      <section class="dashboard-section" aria-labelledby="map-heading">
+        <div class="section-container">
+          <h2 id="map-heading" class="section-title">
+            <span class="section-eyebrow">Vista geografica</span>Mappa Meteo
+            Italia
+          </h2>
+          <div
+            class="map-placeholder card"
+            id="map-panel"
+            role="img"
+            aria-label="Mappa meteorologica"
+          >
+            <span class="empty-icon" aria-hidden="true">🗺️</span>
+            <p>Mappa interattiva – disponibile nella prossima fase</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="site-footer" role="contentinfo">
+      <div class="footer-container">
+        <div class="footer-brand">
+          <span class="logo-icon" aria-hidden="true">🌤️</span>
+          <span class="logo-text">Meteo<strong>Punto.com</strong></span>
+          <p class="footer-tagline">Previsioni meteo chiare, ogni giorno.</p>
+        </div>
+        <nav class="footer-nav" aria-label="Link footer">
+          <ul role="list">
+            <li><a href="#">Chi siamo</a></li>
+            <li><a href="#">Privacy Policy</a></li>
+            <li><a href="#">Cookie</a></li>
+            <li><a href="#">Contatti</a></li>
+          </ul>
+        </nav>
+        <p class="footer-copy">
+          &copy; 2025 MeteoPunto.com – Tutti i diritti riservati.
+        </p>
+      </div>
+    </footer>
+
+    <a href="#main-content" class="skip-link">Salta al contenuto principale</a>
+    <script src="app.js" defer></script>
+  </body>
+</html>
