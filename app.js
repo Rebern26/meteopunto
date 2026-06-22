@@ -92,35 +92,96 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-/** Converte il WMO weather code in {label, icon} */
+/**
+ * Converte il WMO weather code in {label, icon}
+ * Mappatura SEVERA: progressione corretta 0→1→2→3
+ * e tutti i codici di precipitazione/neve/temporale distinti.
+ */
 function wmoToCondition(code) {
   const map = {
-    0: { label: "Cielo sereno", icon: "☀️" },
-    1: { label: "Prevalentemente sereno", icon: "🌤️" },
-    2: { label: "Parzialmente nuvoloso", icon: "⛅" },
-    3: { label: "Coperto", icon: "☁️" },
+    // ── Sereno / Nuvolosità progressiva ──────────────────
+    0: { label: "Cielo sereno", icon: "☀️" }, // 0–10% nuv.
+    1: { label: "Poco nuvoloso", icon: "🌤️" }, // 10–30% nuv.
+    2: { label: "Parzialmente nuvoloso", icon: "⛅" }, // 30–70% nuv.
+    3: { label: "Coperto", icon: "☁️" }, // 70–100% nuv.
+    // ── Nebbia ───────────────────────────────────────────
     45: { label: "Nebbia", icon: "🌫️" },
     48: { label: "Nebbia gelata", icon: "🌫️" },
+    // ── Pioggerella (drizzle) ─────────────────────────────
     51: { label: "Pioggerella leggera", icon: "🌦️" },
     53: { label: "Pioggerella moderata", icon: "🌦️" },
     55: { label: "Pioggerella intensa", icon: "🌧️" },
+    56: { label: "Pioggerella gelata lieve", icon: "🌧️" },
+    57: { label: "Pioggerella gelata", icon: "🌧️" },
+    // ── Pioggia ──────────────────────────────────────────
     61: { label: "Pioggia leggera", icon: "🌧️" },
     63: { label: "Pioggia moderata", icon: "🌧️" },
     65: { label: "Pioggia intensa", icon: "🌧️" },
+    66: { label: "Pioggia gelata lieve", icon: "🌧️" },
+    67: { label: "Pioggia gelata", icon: "🌧️" },
+    // ── Neve ─────────────────────────────────────────────
     71: { label: "Neve leggera", icon: "🌨️" },
     73: { label: "Neve moderata", icon: "❄️" },
     75: { label: "Neve intensa", icon: "❄️" },
     77: { label: "Granelli di neve", icon: "🌨️" },
+    // ── Rovesci ──────────────────────────────────────────
     80: { label: "Rovesci leggeri", icon: "🌦️" },
     81: { label: "Rovesci moderati", icon: "🌧️" },
     82: { label: "Rovesci violenti", icon: "⛈️" },
     85: { label: "Rovesci di neve", icon: "🌨️" },
     86: { label: "Forti rovesci di neve", icon: "❄️" },
+    // ── Temporali ────────────────────────────────────────
     95: { label: "Temporale", icon: "⛈️" },
     96: { label: "Temporale con grandine", icon: "⛈️" },
     99: { label: "Temporale violento", icon: "🌩️" },
   };
-  return map[code] || { label: "N/D", icon: "❓" };
+  return map[code] ?? { label: "N/D", icon: "❓" };
+}
+
+/**
+ * NOWCASTING – sovrascrittura condizione con dati reali
+ * Usato per la fascia oraria corrente nel giorno "Oggi".
+ *
+ * Regole (in ordine di priorità):
+ * 1. Se c'è precipitazione reale > 0 → usa WMO code corrente
+ * 2. Se cloud_cover reale > 70%      → forza "Coperto" (code 3)
+ * 3. Se cloud_cover reale > 30%      → forza "Parzialmente nuvoloso" (code 2)
+ * 4. Altrimenti → lascia la previsione oraria invariata
+ *
+ * @param {object} currentData  - data.current dell'API
+ * @param {object} hourlyCondit - condizione oraria già calcolata
+ * @returns {object} condizione corretta {label, icon}
+ */
+function applyNowcasting(currentData, hourlyCondit) {
+  if (!currentData) return hourlyCondit;
+
+  const precip = currentData.precipitation ?? 0;
+  const cloudCover = currentData.cloud_cover ?? 0;
+  const wmoCode = currentData.weather_code ?? null;
+
+  // Priorità 1: pioggia/neve in atto → usa il WMO attuale
+  if (precip > 0 && wmoCode !== null) {
+    const realCond = wmoToCondition(wmoCode);
+    console.log(`[Nowcasting] Precipitazione ${precip}mm → ${realCond.label}`);
+    return realCond;
+  }
+
+  // Priorità 2: copertura nuvolosa > 70% → Coperto
+  if (cloudCover > 70) {
+    console.log(`[Nowcasting] Cloud cover ${cloudCover}% > 70% → Coperto`);
+    return { label: "Coperto", icon: "☁️" };
+  }
+
+  // Priorità 3: copertura nuvolosa > 30% → Parzialmente nuvoloso
+  if (cloudCover > 30) {
+    console.log(
+      `[Nowcasting] Cloud cover ${cloudCover}% > 30% → Parzialmente nuvoloso`,
+    );
+    return { label: "Parzialmente nuvoloso", icon: "⛅" };
+  }
+
+  // Nessuna sovrascrittura necessaria
+  return hourlyCondit;
 }
 
 /** Converte gradi meteorologici in sigla direzione vento */
@@ -216,6 +277,17 @@ async function fetchWeather(loc) {
   const params = new URLSearchParams({
     latitude: loc.latitude,
     longitude: loc.longitude,
+    // ── Dati correnti in tempo reale (Nowcasting) ──────────
+    current: [
+      "temperature_2m",
+      "weather_code",
+      "cloud_cover",
+      "precipitation",
+      "wind_speed_10m",
+      "wind_direction_10m",
+      "apparent_temperature",
+      "relative_humidity_2m",
+    ].join(","),
     hourly: [
       "temperature_2m",
       "apparent_temperature",
@@ -224,6 +296,7 @@ async function fetchWeather(loc) {
       "winddirection_10m",
       "uv_index",
       "relativehumidity_2m",
+      "cloud_cover", // aggiunto per nowcasting fasce orarie
     ].join(","),
     daily: [
       "weathercode",
@@ -302,17 +375,44 @@ async function loadWeatherData(loc) {
 ═══════════════════════════════════════ */
 function renderCurrentWeather(data, loc) {
   const cw = data.current_weather;
-  const cond = wmoToCondition(cw.weathercode);
+  const cur = data.current; // dati nowcasting in tempo reale
   const sublabel = loc.region ? `${loc.region}, ${loc.country}` : loc.country;
 
-  // Prendo temperatura percepita dall'array hourly dell'ora corrente
-  const nowHour = new Date().getHours();
-  const todayBase = 0 * 24; // giorno 0 = oggi
-  const feelsIdx = todayBase + nowHour;
-  const feelsLike = Math.round(
-    data.hourly.apparent_temperature[feelsIdx] ?? cw.temperature,
-  );
-  const humidity = data.hourly.relativehumidity_2m[feelsIdx] ?? "–";
+  // ── Usa i dati "current" se disponibili, altrimenti fallback a current_weather ──
+  const temp = cur
+    ? Math.round(cur.temperature_2m)
+    : Math.round(cw.temperature);
+  const feelsLike = cur ? Math.round(cur.apparent_temperature) : temp;
+  const humidity = cur ? Math.round(cur.relative_humidity_2m) : "–";
+  const windSpeed = cur
+    ? Math.round(cur.wind_speed_10m)
+    : Math.round(cw.windspeed);
+  const windDir = cur
+    ? degToDir(cur.wind_direction_10m)
+    : degToDir(cw.winddirection);
+  const precip = cur ? (cur.precipitation ?? 0) : 0;
+  const cloudCov = cur ? (cur.cloud_cover ?? 0) : 0;
+
+  // Condizione: usa WMO nowcasting se disponibile
+  const wmoCode = cur?.weather_code ?? cw.weathercode;
+  let cond = wmoToCondition(wmoCode);
+
+  // Ulteriore verifica cloud_cover per massima precisione
+  if (precip === 0 && cloudCov > 70 && [0, 1, 2].includes(wmoCode)) {
+    cond = { label: "Coperto", icon: "☁️" };
+  }
+
+  // Indicatore precipitazione in corso
+  const precipBadge =
+    precip > 0
+      ? `<span style="font-size:0.78rem;color:#00A8E8;font-weight:600">🌧️ Precipitazione: ${precip.toFixed(1)} mm</span>`
+      : "";
+
+  // Indicatore copertura nuvolosa
+  const cloudBadge =
+    cloudCov > 0
+      ? `<span style="font-size:0.75rem;color:var(--color-text-muted)">☁️ Nuvolosità: ${cloudCov}%</span>`
+      : "";
 
   dom.currentWeatherPanel.innerHTML = `
     <div class="current-weather-layout">
@@ -324,14 +424,16 @@ function renderCurrentWeather(data, loc) {
         </div>
         <div class="cw-temp-block">
           <span class="cw-icon" aria-hidden="true">${cond.icon}</span>
-          <span class="cw-temp">${Math.round(cw.temperature)}°</span>
+          <span class="cw-temp">${temp}°</span>
         </div>
         <p class="cw-condition">${cond.label}</p>
         <p class="cw-feels">Percepita: ${feelsLike}°C</p>
+        ${precipBadge}
+        ${cloudBadge}
       </div>
       <div class="cw-stats">
         <div class="cw-stat"><span class="cw-stat-icon">💧</span><span class="cw-stat-label">Umidità</span><strong>${humidity}%</strong></div>
-        <div class="cw-stat"><span class="cw-stat-icon">💨</span><span class="cw-stat-label">Vento</span><strong>${Math.round(cw.windspeed)} km/h ${degToDir(cw.winddirection)}</strong></div>
+        <div class="cw-stat"><span class="cw-stat-icon">💨</span><span class="cw-stat-label">Vento</span><strong>${windSpeed} km/h ${windDir}</strong></div>
         <div class="cw-stat"><span class="cw-stat-icon">🌡️</span><span class="cw-stat-label">Max/Min</span><strong>${Math.round(data.daily.temperature_2m_max[0])}° / ${Math.round(data.daily.temperature_2m_min[0])}°</strong></div>
         <div class="cw-stat"><span class="cw-stat-icon">☀️</span><span class="cw-stat-label">UV Max</span><strong>${data.daily.uv_index_max[0]}</strong></div>
       </div>
@@ -414,19 +516,53 @@ function renderDayTabs(weather) {
 ═══════════════════════════════════════ */
 function renderTimeslots(weather, marine, dayIdx) {
   dom.timeslotGrid.innerHTML = "";
+
+  const nowHour = new Date().getHours();
+  const isToday = dayIdx === 0;
+  const currentData = weather.current || null; // dati nowcasting
+
   CONFIG.FASCE.forEach((fascia) => {
     const hIdx = dayIdx * 24 + fascia.hour;
-    const cond = wmoToCondition(weather.hourly.weathercode[hIdx]);
+
+    // Condizione dalla previsione oraria
+    let cond = wmoToCondition(weather.hourly.weathercode[hIdx]);
+
+    // ── NOWCASTING: sovrascrittura solo per la fascia corrente di "Oggi" ──
+    // La fascia è "corrente" se l'ora attuale rientra nel suo blocco:
+    // NOTTE   03:00 → blocco 00–05
+    // MATTINA 09:00 → blocco 06–11
+    // POMERIGGIO 15:00 → blocco 12–17
+    // SERA    21:00 → blocco 18–23
+    const fasciaRanges = {
+      notte: [0, 5],
+      mattina: [6, 11],
+      pomeriggio: [12, 17],
+      sera: [18, 23],
+    };
+    const [start, end] = fasciaRanges[fascia.key];
+    const isFasciaCorrente = isToday && nowHour >= start && nowHour <= end;
+
+    if (isFasciaCorrente && currentData) {
+      cond = applyNowcasting(currentData, cond);
+    }
+
     const temp = Math.round(weather.hourly.temperature_2m[hIdx]);
     const wind = Math.round(weather.hourly.windspeed_10m[hIdx]);
 
+    // Badge "LIVE" visibile solo sulla fascia corrente di oggi
+    const liveBadge = isFasciaCorrente
+      ? `<span style="display:inline-block;background:#E74C3C;color:#fff;font-size:0.6rem;font-weight:700;padding:1px 6px;border-radius:99px;letter-spacing:0.05em;margin-left:auto">LIVE</span>`
+      : "";
+
     const card = document.createElement("div");
-    card.className = "timeslot-card";
+    card.className =
+      "timeslot-card" + (isFasciaCorrente ? " timeslot-current" : "");
     card.innerHTML = `
       <div class="timeslot-header ${fascia.cssClass}">
         <span>${fascia.icon}</span>
         <span>${fascia.label}</span>
-        <span style="margin-left:auto;font-size:0.68rem;opacity:0.85">ore ${fascia.hour}:00</span>
+        ${liveBadge}
+        <span style="margin-left:${isFasciaCorrente ? "4px" : "auto"};font-size:0.68rem;opacity:0.85">ore ${fascia.hour}:00</span>
       </div>
       <div class="timeslot-body">
         <span class="timeslot-icon">${cond.icon}</span>
@@ -868,11 +1004,13 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
 (function init() {
   injectCurrentWeatherCSS();
   console.log(
-    "%c🌤️ MeteoPunto.com – FASE 3 caricata\n" +
+    "%c🌤️ MeteoPunto.com – FASE 3 + Nowcasting caricata\n" +
       "%c📅 Previsioni: 16 giorni · 4 fasce · 4 servizi\n" +
-      "%c🌊 Marine API: rilevamento automatico entroterra",
+      "%c🌊 Marine API: rilevamento automatico entroterra\n" +
+      "%c⚡ Nowcasting: cloud_cover + precipitation in tempo reale",
     "color:#FFD700;font-weight:700;font-size:14px;",
     "color:#00A8E8;font-weight:500;",
     "color:#2ECC71;font-weight:500;",
+    "color:#E74C3C;font-weight:500;",
   );
 })();
