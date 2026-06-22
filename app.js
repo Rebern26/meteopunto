@@ -69,6 +69,8 @@ const dom = {
   hamburger: document.querySelector(".hamburger"),
   mobileMenu: document.getElementById("mobile-menu"),
   tagButtons: document.querySelectorAll(".tag-btn"),
+  hourlyForecastContainer: document.getElementById("hourly-forecast-container"),
+  hourlyForecastWrapper: document.getElementById("hourly-forecast-wrapper"),
 };
 
 /* ═══════════════════════════════════════
@@ -296,7 +298,8 @@ async function fetchWeather(loc) {
       "winddirection_10m",
       "uv_index",
       "relativehumidity_2m",
-      "cloud_cover", // aggiunto per nowcasting fasce orarie
+      "cloud_cover",
+      "precipitation_probability", // per le card ora per ora
     ].join(","),
     daily: [
       "weathercode",
@@ -448,6 +451,7 @@ function renderForecastSection(weather, marine, loc) {
   dom.forecastSection.hidden = false;
   renderDayTabs(weather);
   renderTimeslots(weather, marine, state.selectedDayIdx);
+  renderHourlyForecast(weather, state.selectedDayIdx);
   renderServicePanel(
     weather,
     marine,
@@ -497,6 +501,7 @@ function renderDayTabs(weather) {
         b.setAttribute("aria-selected", i === idx);
       });
       renderTimeslots(state.weatherData, state.marineData, idx);
+      renderHourlyForecast(state.weatherData, idx);
       renderServicePanel(
         state.weatherData,
         state.marineData,
@@ -572,6 +577,66 @@ function renderTimeslots(weather, marine, dayIdx) {
       </div>`;
     dom.timeslotGrid.appendChild(card);
   });
+}
+
+/* ═══════════════════════════════════════
+   RENDER – PREVISIONI ORA PER ORA
+   Genera 24 card orarie per il giorno selezionato.
+   L'ora corrente (solo per "Oggi") è evidenziata
+   con bordo azzurro e badge "ORA".
+═══════════════════════════════════════ */
+function renderHourlyForecast(weather, dayIdx) {
+  const container = dom.hourlyForecastContainer;
+  if (!container) return;
+  container.innerHTML = "";
+
+  const isToday = dayIdx === 0;
+  const nowHour = new Date().getHours();
+  const baseIdx = dayIdx * 24;
+
+  // Recupera array precipitation_probability (potrebbe non esserci)
+  const precipProb = weather.hourly.precipitation_probability || [];
+
+  for (let h = 0; h < 24; h++) {
+    const idx = baseIdx + h;
+    const cond = wmoToCondition(weather.hourly.weathercode[idx]);
+    const temp = Math.round(weather.hourly.temperature_2m[idx]);
+    const prob = precipProb[idx] ?? 0;
+    const isNow = isToday && h === nowHour;
+
+    const card = document.createElement("div");
+    card.className = "hf-card" + (isNow ? " hf-now" : "");
+
+    // Badge "ORA" sull'ora corrente
+    const nowBadge = isNow ? `<span class="hf-now-badge">ORA</span>` : "";
+
+    // Probabilità pioggia — mostrata solo se > 0%
+    const precipHTML =
+      prob > 0 ? `<span class="hf-precip">💧 ${prob}%</span>` : "";
+
+    card.innerHTML = `
+      ${nowBadge}
+      <span class="hf-hour">${String(h).padStart(2, "0")}:00</span>
+      <span class="hf-icon" aria-hidden="true">${cond.icon}</span>
+      <span class="hf-temp">${temp}°</span>
+      ${precipHTML}`;
+
+    container.appendChild(card);
+  }
+
+  // Scrolla automaticamente all'ora corrente se è "Oggi"
+  if (isToday) {
+    setTimeout(() => {
+      const nowCard = container.querySelector(".hf-now");
+      if (nowCard) {
+        nowCard.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "center",
+        });
+      }
+    }, 100);
+  }
 }
 
 /* ═══════════════════════════════════════

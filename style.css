@@ -867,6 +867,137 @@ input {
   text-align: center;
 }
 
+/* ─── 13b. PREVISIONI ORA PER ORA ───────────────────────── */
+.hourly-forecast-wrapper {
+  margin-bottom: var(--space-xl);
+}
+
+.hourly-forecast-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: var(--space-md);
+}
+
+.hourly-forecast-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* Scroll container */
+.hourly-forecast-scroll {
+  overflow-x: auto;
+  padding-bottom: var(--space-sm);
+  /* Scrollbar sottile e discreta */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-sky-light) transparent;
+  /* Bordo arrotondato con fade ai lati su webkit */
+  -webkit-overflow-scrolling: touch;
+}
+.hourly-forecast-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.hourly-forecast-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.hourly-forecast-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-sky-light);
+  border-radius: 4px;
+}
+
+/* Flex strip delle card */
+.hourly-forecast-container {
+  display: flex;
+  gap: 10px;
+  min-width: max-content;
+  padding: 4px 2px 8px;
+}
+
+/* Singola card oraria */
+.hf-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 12px 10px;
+  min-width: 68px;
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
+  transition:
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+  cursor: default;
+  position: relative;
+}
+.hf-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* Card dell'ora corrente — evidenziata */
+.hf-card.hf-now {
+  border-color: var(--color-sky);
+  background: var(--color-sky-light);
+  box-shadow:
+    0 0 0 2px var(--color-sky),
+    var(--shadow-sm);
+}
+
+/* Ora */
+.hf-hour {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.03em;
+}
+.hf-card.hf-now .hf-hour {
+  color: var(--color-sky-deep);
+}
+
+/* Badge ORA */
+.hf-now-badge {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-sky);
+  color: #fff;
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+/* Icona meteo */
+.hf-icon {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+/* Temperatura */
+.hf-temp {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* Probabilità pioggia */
+.hf-precip {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--color-sky-deep);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
 /* ─── 14. RESPONSIVE ────────────────────────────────────── */
 @media (max-width: 1024px) {
   .nav-links {
