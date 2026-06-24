@@ -1,7 +1,7 @@
 /**
  * ═══════════════════════════════════════════════════════════
- * METEOPUNTO.COM – app.js  |  FASE 3
- * Previsioni reali fino a 16 giorni · 4 fasce orarie · 4 servizi
+ * METEOPUNTO.COM – app.js  |  Redesign Timeline
+ * Scheda Live + Timeline 24h ora per ora + 16 giorni
  * ═══════════════════════════════════════════════════════════
  */
 
@@ -19,36 +19,17 @@ const CONFIG = {
   MIN_CHARS: 3,
   MAX_RESULTS: 8,
   LANGUAGE: "it",
-  // Ore delle 4 fasce orarie (indice nell'array hourly)
-  FASCE: [
-    { key: "notte", label: "NOTTE", hour: 3, icon: "🌙", cssClass: "notte" },
-    {
-      key: "mattina",
-      label: "MATTINA",
-      hour: 9,
-      icon: "🌅",
-      cssClass: "mattina",
-    },
-    {
-      key: "pomeriggio",
-      label: "POMERIGGIO",
-      hour: 15,
-      icon: "☀️",
-      cssClass: "pomeriggio",
-    },
-    { key: "sera", label: "SERA", hour: 21, icon: "🌆", cssClass: "sera" },
-  ],
 };
 
 /* ═══════════════════════════════════════
    STATO GLOBALE
 ═══════════════════════════════════════ */
 const state = {
-  selectedLocation: null, // {name, region, country, latitude, longitude, elevation, timezone}
-  weatherData: null, // risposta grezza API Open-Meteo
-  marineData: null, // risposta grezza API Marine (null se entroterra)
-  selectedDayIdx: 0, // indice del giorno selezionato (0=Oggi … 15)
-  activeService: "forecast", // tab servizio attivo
+  selectedLocation: null,
+  weatherData: null,
+  marineData: null,
+  selectedDayIdx: 0,
+  activeService: "forecast",
   menuOpen: false,
   abortController: null,
 };
@@ -60,21 +41,19 @@ const dom = {
   searchInput: document.getElementById("city-search"),
   autocompleteList: document.getElementById("autocomplete-list"),
   searchBtn: document.querySelector(".search-btn"),
-  currentWeatherPanel: document.getElementById("current-weather-panel"),
   forecastSection: document.getElementById("forecast-section"),
+  liveWeatherCard: document.getElementById("live-weather-card"),
+  hourlyContainer: document.getElementById("hourly-container"),
   dayTabs: document.getElementById("day-tabs"),
-  timeslotGrid: document.getElementById("timeslot-grid"),
   servicePanel: document.getElementById("service-panel"),
   serviceTabs: document.querySelectorAll(".service-tab"),
   hamburger: document.querySelector(".hamburger"),
   mobileMenu: document.getElementById("mobile-menu"),
   tagButtons: document.querySelectorAll(".tag-btn"),
-  hourlyForecastContainer: document.getElementById("hourly-forecast-container"),
-  hourlyForecastWrapper: document.getElementById("hourly-forecast-wrapper"),
 };
 
 /* ═══════════════════════════════════════
-   UTILITÀ
+   UTILITY
 ═══════════════════════════════════════ */
 function debounce(fn, wait) {
   let t;
@@ -94,101 +73,8 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-/**
- * Converte il WMO weather code in {label, icon}
- * Mappatura SEVERA: progressione corretta 0→1→2→3
- * e tutti i codici di precipitazione/neve/temporale distinti.
- */
-function wmoToCondition(code) {
-  const map = {
-    // ── Sereno / Nuvolosità progressiva ──────────────────
-    0: { label: "Cielo sereno", icon: "☀️" }, // 0–10% nuv.
-    1: { label: "Poco nuvoloso", icon: "🌤️" }, // 10–30% nuv.
-    2: { label: "Parzialmente nuvoloso", icon: "⛅" }, // 30–70% nuv.
-    3: { label: "Coperto", icon: "☁️" }, // 70–100% nuv.
-    // ── Nebbia ───────────────────────────────────────────
-    45: { label: "Nebbia", icon: "🌫️" },
-    48: { label: "Nebbia gelata", icon: "🌫️" },
-    // ── Pioggerella (drizzle) ─────────────────────────────
-    51: { label: "Pioggerella leggera", icon: "🌦️" },
-    53: { label: "Pioggerella moderata", icon: "🌦️" },
-    55: { label: "Pioggerella intensa", icon: "🌧️" },
-    56: { label: "Pioggerella gelata lieve", icon: "🌧️" },
-    57: { label: "Pioggerella gelata", icon: "🌧️" },
-    // ── Pioggia ──────────────────────────────────────────
-    61: { label: "Pioggia leggera", icon: "🌧️" },
-    63: { label: "Pioggia moderata", icon: "🌧️" },
-    65: { label: "Pioggia intensa", icon: "🌧️" },
-    66: { label: "Pioggia gelata lieve", icon: "🌧️" },
-    67: { label: "Pioggia gelata", icon: "🌧️" },
-    // ── Neve ─────────────────────────────────────────────
-    71: { label: "Neve leggera", icon: "🌨️" },
-    73: { label: "Neve moderata", icon: "❄️" },
-    75: { label: "Neve intensa", icon: "❄️" },
-    77: { label: "Granelli di neve", icon: "🌨️" },
-    // ── Rovesci ──────────────────────────────────────────
-    80: { label: "Rovesci leggeri", icon: "🌦️" },
-    81: { label: "Rovesci moderati", icon: "🌧️" },
-    82: { label: "Rovesci violenti", icon: "⛈️" },
-    85: { label: "Rovesci di neve", icon: "🌨️" },
-    86: { label: "Forti rovesci di neve", icon: "❄️" },
-    // ── Temporali ────────────────────────────────────────
-    95: { label: "Temporale", icon: "⛈️" },
-    96: { label: "Temporale con grandine", icon: "⛈️" },
-    99: { label: "Temporale violento", icon: "🌩️" },
-  };
-  return map[code] ?? { label: "N/D", icon: "❓" };
-}
-
-/**
- * NOWCASTING – sovrascrittura condizione con dati reali
- * Usato per la fascia oraria corrente nel giorno "Oggi".
- *
- * Regole (in ordine di priorità):
- * 1. Se c'è precipitazione reale > 0 → usa WMO code corrente
- * 2. Se cloud_cover reale > 70%      → forza "Coperto" (code 3)
- * 3. Se cloud_cover reale > 30%      → forza "Parzialmente nuvoloso" (code 2)
- * 4. Altrimenti → lascia la previsione oraria invariata
- *
- * @param {object} currentData  - data.current dell'API
- * @param {object} hourlyCondit - condizione oraria già calcolata
- * @returns {object} condizione corretta {label, icon}
- */
-function applyNowcasting(currentData, hourlyCondit) {
-  if (!currentData) return hourlyCondit;
-
-  const precip = currentData.precipitation ?? 0;
-  const cloudCover = currentData.cloud_cover ?? 0;
-  const wmoCode = currentData.weather_code ?? null;
-
-  // Priorità 1: pioggia/neve in atto → usa il WMO attuale
-  if (precip > 0 && wmoCode !== null) {
-    const realCond = wmoToCondition(wmoCode);
-    console.log(`[Nowcasting] Precipitazione ${precip}mm → ${realCond.label}`);
-    return realCond;
-  }
-
-  // Priorità 2: copertura nuvolosa > 70% → Coperto
-  if (cloudCover > 70) {
-    console.log(`[Nowcasting] Cloud cover ${cloudCover}% > 70% → Coperto`);
-    return { label: "Coperto", icon: "☁️" };
-  }
-
-  // Priorità 3: copertura nuvolosa > 30% → Parzialmente nuvoloso
-  if (cloudCover > 30) {
-    console.log(
-      `[Nowcasting] Cloud cover ${cloudCover}% > 30% → Parzialmente nuvoloso`,
-    );
-    return { label: "Parzialmente nuvoloso", icon: "⛅" };
-  }
-
-  // Nessuna sovrascrittura necessaria
-  return hourlyCondit;
-}
-
-/** Converte gradi meteorologici in sigla direzione vento */
 function degToDir(deg) {
-  const dirs = [
+  const d = [
     "N",
     "NNE",
     "NE",
@@ -206,10 +92,9 @@ function degToDir(deg) {
     "NO",
     "NNO",
   ];
-  return dirs[Math.round(deg / 22.5) % 16];
+  return d[Math.round(deg / 22.5) % 16];
 }
 
-/** Colore e label per indice UV */
 function uvMeta(idx) {
   if (idx <= 2) return { label: "Basso", color: "#2ECC71" };
   if (idx <= 5) return { label: "Moderato", color: "#F1C40F" };
@@ -218,7 +103,6 @@ function uvMeta(idx) {
   return { label: "Estremo", color: "#9B59B6" };
 }
 
-/** Formatta data nel formato "Lun 23" */
 function formatDayLabel(dateStr, idx) {
   if (idx === 0) return { name: "Oggi", date: "" };
   if (idx === 1) return { name: "Domani", date: "" };
@@ -243,6 +127,59 @@ function highlightMatch(text, query) {
     "gi",
   );
   return escaped.replace(re, "<mark>$1</mark>");
+}
+
+/**
+ * Converte il WMO weather code in {label, icon}
+ * Mappatura severa e completa.
+ */
+function wmoToCondition(code) {
+  const map = {
+    0: { label: "Cielo sereno", icon: "☀️" },
+    1: { label: "Poco nuvoloso", icon: "🌤️" },
+    2: { label: "Parzialmente nuvoloso", icon: "⛅" },
+    3: { label: "Coperto", icon: "☁️" },
+    45: { label: "Nebbia", icon: "🌫️" },
+    48: { label: "Nebbia gelata", icon: "🌫️" },
+    51: { label: "Pioggerella leggera", icon: "🌦️" },
+    53: { label: "Pioggerella moderata", icon: "🌦️" },
+    55: { label: "Pioggerella intensa", icon: "🌧️" },
+    56: { label: "Pioggerella gelata", icon: "🌧️" },
+    57: { label: "Pioggerella gelata forte", icon: "🌧️" },
+    61: { label: "Pioggia leggera", icon: "🌧️" },
+    63: { label: "Pioggia moderata", icon: "🌧️" },
+    65: { label: "Pioggia intensa", icon: "🌧️" },
+    66: { label: "Pioggia gelata lieve", icon: "🌧️" },
+    67: { label: "Pioggia gelata", icon: "🌧️" },
+    71: { label: "Neve leggera", icon: "🌨️" },
+    73: { label: "Neve moderata", icon: "❄️" },
+    75: { label: "Neve intensa", icon: "❄️" },
+    77: { label: "Granelli di neve", icon: "🌨️" },
+    80: { label: "Rovesci leggeri", icon: "🌦️" },
+    81: { label: "Rovesci moderati", icon: "🌧️" },
+    82: { label: "Rovesci violenti", icon: "⛈️" },
+    85: { label: "Rovesci di neve", icon: "🌨️" },
+    86: { label: "Forti rovesci di neve", icon: "❄️" },
+    95: { label: "Temporale", icon: "⛈️" },
+    96: { label: "Temporale con grandine", icon: "⛈️" },
+    99: { label: "Temporale violento", icon: "🌩️" },
+  };
+  return map[code] ?? { label: "N/D", icon: "❓" };
+}
+
+/**
+ * Nowcasting: sovrascrive la condizione con dati live
+ * se la copertura nuvolosa o la precipitazione lo richiedono.
+ */
+function applyNowcasting(currentData, hourlyCondit) {
+  if (!currentData) return hourlyCondit;
+  const precip = currentData.precipitation ?? 0;
+  const cloudCover = currentData.cloud_cover ?? 0;
+  const wmoCode = currentData.weather_code ?? null;
+  if (precip > 0 && wmoCode !== null) return wmoToCondition(wmoCode);
+  if (cloudCover > 70) return { label: "Coperto", icon: "☁️" };
+  if (cloudCover > 30) return { label: "Parzialmente nuvoloso", icon: "⛅" };
+  return hourlyCondit;
 }
 
 /* ═══════════════════════════════════════
@@ -273,13 +210,12 @@ async function fetchLocations(query) {
 }
 
 /* ═══════════════════════════════════════
-   API – METEO 16 GIORNI (Open-Meteo)
+   API – METEO 16 GIORNI
 ═══════════════════════════════════════ */
 async function fetchWeather(loc) {
   const params = new URLSearchParams({
     latitude: loc.latitude,
     longitude: loc.longitude,
-    // ── Dati correnti in tempo reale (Nowcasting) ──────────
     current: [
       "temperature_2m",
       "weather_code",
@@ -299,7 +235,7 @@ async function fetchWeather(loc) {
       "uv_index",
       "relativehumidity_2m",
       "cloud_cover",
-      "precipitation_probability", // per le card ora per ora
+      "precipitation_probability",
     ].join(","),
     daily: [
       "weathercode",
@@ -321,9 +257,7 @@ async function fetchWeather(loc) {
 }
 
 /* ═══════════════════════════════════════
-   API – MARINE (Open-Meteo Marine)
-   Se la località è nell'entroterra l'API
-   restituirà dati nulli o errore → lo gestiamo.
+   API – MARINE
 ═══════════════════════════════════════ */
 async function fetchMarine(loc) {
   const params = new URLSearchParams({
@@ -337,11 +271,10 @@ async function fetchMarine(loc) {
     const res = await fetch(`${CONFIG.MARINE_URL}?${params}`);
     if (!res.ok) return null;
     const data = await res.json();
-    // Se tutti i valori sono null = entroterra
     const hasData = data.hourly?.wave_height?.some((v) => v !== null);
     return hasData ? data : null;
   } catch {
-    return null; // silenziosamente: entroterra o errore rete
+    return null;
   }
 }
 
@@ -349,9 +282,8 @@ async function fetchMarine(loc) {
    CARICAMENTO PRINCIPALE
 ═══════════════════════════════════════ */
 async function loadWeatherData(loc) {
-  showDashboardLoading();
+  showLoadingState();
   try {
-    // Le due chiamate partono in parallelo
     const [weather, marine] = await Promise.all([
       fetchWeather(loc),
       fetchMarine(loc),
@@ -361,104 +293,29 @@ async function loadWeatherData(loc) {
     state.selectedDayIdx = 0;
     state.activeService = "forecast";
 
-    renderCurrentWeather(weather, loc);
-    renderForecastSection(weather, marine, loc);
+    renderAll(weather, marine, loc, 0);
   } catch (err) {
-    console.error("MeteoPunto – Errore caricamento:", err);
-    dom.currentWeatherPanel.innerHTML = `
-      <div class="card-empty-state">
+    console.error("MeteoPunto – Errore:", err);
+    dom.liveWeatherCard.innerHTML = `
+      <div class="card-empty-state" style="color:rgba(255,255,255,0.7)">
         <span class="empty-icon">⚠️</span>
-        <p>Errore nel caricamento dei dati. Riprova tra poco.</p>
+        <p>Errore nel caricamento. Riprova tra poco.</p>
       </div>`;
   }
 }
 
 /* ═══════════════════════════════════════
-   RENDER – METEO ATTUALE
+   RENDER PRINCIPALE
 ═══════════════════════════════════════ */
-function renderCurrentWeather(data, loc) {
-  const cw = data.current_weather;
-  const cur = data.current; // dati nowcasting in tempo reale
-  const sublabel = loc.region ? `${loc.region}, ${loc.country}` : loc.country;
-
-  // ── Usa i dati "current" se disponibili, altrimenti fallback a current_weather ──
-  const temp = cur
-    ? Math.round(cur.temperature_2m)
-    : Math.round(cw.temperature);
-  const feelsLike = cur ? Math.round(cur.apparent_temperature) : temp;
-  const humidity = cur ? Math.round(cur.relative_humidity_2m) : "–";
-  const windSpeed = cur
-    ? Math.round(cur.wind_speed_10m)
-    : Math.round(cw.windspeed);
-  const windDir = cur
-    ? degToDir(cur.wind_direction_10m)
-    : degToDir(cw.winddirection);
-  const precip = cur ? (cur.precipitation ?? 0) : 0;
-  const cloudCov = cur ? (cur.cloud_cover ?? 0) : 0;
-
-  // Condizione: usa WMO nowcasting se disponibile
-  const wmoCode = cur?.weather_code ?? cw.weathercode;
-  let cond = wmoToCondition(wmoCode);
-
-  // Ulteriore verifica cloud_cover per massima precisione
-  if (precip === 0 && cloudCov > 70 && [0, 1, 2].includes(wmoCode)) {
-    cond = { label: "Coperto", icon: "☁️" };
-  }
-
-  // Indicatore precipitazione in corso
-  const precipBadge =
-    precip > 0
-      ? `<span style="font-size:0.78rem;color:#00A8E8;font-weight:600">🌧️ Precipitazione: ${precip.toFixed(1)} mm</span>`
-      : "";
-
-  // Indicatore copertura nuvolosa
-  const cloudBadge =
-    cloudCov > 0
-      ? `<span style="font-size:0.75rem;color:var(--color-text-muted)">☁️ Nuvolosità: ${cloudCov}%</span>`
-      : "";
-
-  dom.currentWeatherPanel.innerHTML = `
-    <div class="current-weather-layout">
-      <div class="cw-main">
-        <div class="cw-location">
-          <span class="cw-city-name">${escapeHtml(loc.name)}</span>
-          <span class="cw-region">${escapeHtml(sublabel)}</span>
-          ${loc.elevation ? `<span class="cw-elevation">📍 ${loc.elevation}m s.l.m.</span>` : ""}
-        </div>
-        <div class="cw-temp-block">
-          <span class="cw-icon" aria-hidden="true">${cond.icon}</span>
-          <span class="cw-temp">${temp}°</span>
-        </div>
-        <p class="cw-condition">${cond.label}</p>
-        <p class="cw-feels">Percepita: ${feelsLike}°C</p>
-        ${precipBadge}
-        ${cloudBadge}
-      </div>
-      <div class="cw-stats">
-        <div class="cw-stat"><span class="cw-stat-icon">💧</span><span class="cw-stat-label">Umidità</span><strong>${humidity}%</strong></div>
-        <div class="cw-stat"><span class="cw-stat-icon">💨</span><span class="cw-stat-label">Vento</span><strong>${windSpeed} km/h ${windDir}</strong></div>
-        <div class="cw-stat"><span class="cw-stat-icon">🌡️</span><span class="cw-stat-label">Max/Min</span><strong>${Math.round(data.daily.temperature_2m_max[0])}° / ${Math.round(data.daily.temperature_2m_min[0])}°</strong></div>
-        <div class="cw-stat"><span class="cw-stat-icon">☀️</span><span class="cw-stat-label">UV Max</span><strong>${data.daily.uv_index_max[0]}</strong></div>
-      </div>
-    </div>`;
-  injectCurrentWeatherCSS();
-}
-
-/* ═══════════════════════════════════════
-   RENDER – SEZIONE PREVISIONI 16 GIORNI
-═══════════════════════════════════════ */
-function renderForecastSection(weather, marine, loc) {
+function renderAll(weather, marine, loc, dayIdx) {
   dom.forecastSection.hidden = false;
-  renderDayTabs(weather);
-  renderTimeslots(weather, marine, state.selectedDayIdx);
-  renderHourlyForecast(weather, state.selectedDayIdx);
-  renderServicePanel(
-    weather,
-    marine,
-    state.selectedDayIdx,
-    state.activeService,
-  );
-  // Riattiva i sub-tab servizi
+
+  renderDayTabs(weather, dayIdx);
+  renderLiveWeather(weather, loc, dayIdx);
+  renderHourlyTimeline(weather, dayIdx);
+  renderServicePanel(weather, marine, dayIdx, state.activeService);
+
+  // Riattiva sub-tab
   dom.serviceTabs.forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.service === state.activeService);
     btn.setAttribute(
@@ -471,7 +328,7 @@ function renderForecastSection(weather, marine, loc) {
 /* ═══════════════════════════════════════
    RENDER – TAB 16 GIORNI
 ═══════════════════════════════════════ */
-function renderDayTabs(weather) {
+function renderDayTabs(weather, selectedIdx) {
   dom.dayTabs.innerHTML = "";
   weather.daily.time.forEach((dateStr, idx) => {
     const { name, date } = formatDayLabel(dateStr, idx);
@@ -480,13 +337,9 @@ function renderDayTabs(weather) {
     const tMin = Math.round(weather.daily.temperature_2m_min[idx]);
 
     const btn = document.createElement("button");
-    btn.className = "day-tab" + (idx === state.selectedDayIdx ? " active" : "");
+    btn.className = "day-tab" + (idx === selectedIdx ? " active" : "");
     btn.setAttribute("role", "tab");
-    btn.setAttribute("aria-selected", idx === state.selectedDayIdx);
-    btn.setAttribute(
-      "aria-label",
-      `${name}${date ? " " + date : ""}: ${cond.label}, ${tMax}°/${tMin}°`,
-    );
+    btn.setAttribute("aria-selected", idx === selectedIdx);
     btn.dataset.dayIdx = idx;
     btn.innerHTML = `
       <span class="day-tab-name">${name}</span>
@@ -500,8 +353,8 @@ function renderDayTabs(weather) {
         b.classList.toggle("active", i === idx);
         b.setAttribute("aria-selected", i === idx);
       });
-      renderTimeslots(state.weatherData, state.marineData, idx);
-      renderHourlyForecast(state.weatherData, idx);
+      renderLiveWeather(state.weatherData, state.selectedLocation, idx);
+      renderHourlyTimeline(state.weatherData, idx);
       renderServicePanel(
         state.weatherData,
         state.marineData,
@@ -515,86 +368,126 @@ function renderDayTabs(weather) {
 }
 
 /* ═══════════════════════════════════════
-   RENDER – GRIGLIA 4 FASCE ORARIE
-   Mostra un riepilogo visivo per ogni fascia
-   (usato come intestazione, sempre visibile)
+   RENDER – SCHEDA LIVE
+   Per "Oggi" usa i dati current live di Open-Meteo.
+   Per i giorni futuri usa l'orario di mezzogiorno.
 ═══════════════════════════════════════ */
-function renderTimeslots(weather, marine, dayIdx) {
-  dom.timeslotGrid.innerHTML = "";
-
-  const nowHour = new Date().getHours();
+function renderLiveWeather(weather, loc, dayIdx) {
   const isToday = dayIdx === 0;
-  const currentData = weather.current || null; // dati nowcasting
+  const cur = weather.current;
+  const cw = weather.current_weather;
+  const sublabel = loc.region ? `${loc.region}, ${loc.country}` : loc.country;
 
-  CONFIG.FASCE.forEach((fascia) => {
-    const hIdx = dayIdx * 24 + fascia.hour;
+  let temp,
+    feelsLike,
+    humidity,
+    windSpeed,
+    windDir,
+    precip,
+    cloudCov,
+    condLabel,
+    condIcon;
 
-    // Condizione dalla previsione oraria
-    let cond = wmoToCondition(weather.hourly.weathercode[hIdx]);
+  if (isToday && cur) {
+    // Dati in tempo reale
+    temp = Math.round(cur.temperature_2m);
+    feelsLike = Math.round(cur.apparent_temperature);
+    humidity = Math.round(cur.relative_humidity_2m);
+    windSpeed = Math.round(cur.wind_speed_10m);
+    windDir = degToDir(cur.wind_direction_10m);
+    precip = cur.precipitation ?? 0;
+    cloudCov = cur.cloud_cover ?? 0;
+    let baseCond = wmoToCondition(cur.weather_code ?? cw.weathercode);
+    const nowcasted = applyNowcasting(cur, baseCond);
+    condIcon = nowcasted.icon;
+    condLabel = nowcasted.label;
+  } else {
+    // Giorno futuro: usa le 12:00 del giorno selezionato
+    const hIdx = dayIdx * 24 + 12;
+    temp = Math.round(weather.hourly.temperature_2m[hIdx]);
+    feelsLike = Math.round(weather.hourly.apparent_temperature[hIdx]);
+    humidity = Math.round(weather.hourly.relativehumidity_2m[hIdx]);
+    windSpeed = Math.round(weather.hourly.windspeed_10m[hIdx]);
+    windDir = degToDir(weather.hourly.winddirection_10m[hIdx]);
+    precip = 0;
+    cloudCov = weather.hourly.cloud_cover?.[hIdx] ?? 0;
+    const c = wmoToCondition(weather.hourly.weathercode[hIdx]);
+    condIcon = c.icon;
+    condLabel = c.label;
+  }
 
-    // ── NOWCASTING: sovrascrittura solo per la fascia corrente di "Oggi" ──
-    // La fascia è "corrente" se l'ora attuale rientra nel suo blocco:
-    // NOTTE   03:00 → blocco 00–05
-    // MATTINA 09:00 → blocco 06–11
-    // POMERIGGIO 15:00 → blocco 12–17
-    // SERA    21:00 → blocco 18–23
-    const fasciaRanges = {
-      notte: [0, 5],
-      mattina: [6, 11],
-      pomeriggio: [12, 17],
-      sera: [18, 23],
-    };
-    const [start, end] = fasciaRanges[fascia.key];
-    const isFasciaCorrente = isToday && nowHour >= start && nowHour <= end;
+  // Badge LIVE solo per oggi
+  const liveBadgeHTML = isToday
+    ? `<div class="lw-badge"><span class="lw-badge-dot"></span>LIVE – Ora</div>`
+    : `<div class="lw-badge" style="background:rgba(255,255,255,0.1)">📅 Previsione</div>`;
 
-    if (isFasciaCorrente && currentData) {
-      cond = applyNowcasting(currentData, cond);
-    }
-
-    const temp = Math.round(weather.hourly.temperature_2m[hIdx]);
-    const wind = Math.round(weather.hourly.windspeed_10m[hIdx]);
-
-    // Badge "LIVE" visibile solo sulla fascia corrente di oggi
-    const liveBadge = isFasciaCorrente
-      ? `<span style="display:inline-block;background:#E74C3C;color:#fff;font-size:0.6rem;font-weight:700;padding:1px 6px;border-radius:99px;letter-spacing:0.05em;margin-left:auto">LIVE</span>`
+  // Precipitazione
+  const precipHTML =
+    isToday && precip > 0
+      ? `<p class="lw-precip">🌧️ Precipitazione: ${precip.toFixed(1)} mm</p>`
       : "";
 
-    const card = document.createElement("div");
-    card.className =
-      "timeslot-card" + (isFasciaCorrente ? " timeslot-current" : "");
-    card.innerHTML = `
-      <div class="timeslot-header ${fascia.cssClass}">
-        <span>${fascia.icon}</span>
-        <span>${fascia.label}</span>
-        ${liveBadge}
-        <span style="margin-left:${isFasciaCorrente ? "4px" : "auto"};font-size:0.68rem;opacity:0.85">ore ${fascia.hour}:00</span>
+  // Nuvolosità
+  const cloudHTML =
+    cloudCov > 0 ? `<p class="lw-cloud">☁️ Nuvolosità: ${cloudCov}%</p>` : "";
+
+  // Tmax / Tmin del giorno
+  const tMax = Math.round(weather.daily.temperature_2m_max[dayIdx]);
+  const tMin = Math.round(weather.daily.temperature_2m_min[dayIdx]);
+
+  dom.liveWeatherCard.innerHTML = `
+    <div class="lw-layout">
+      <div class="lw-main">
+        ${liveBadgeHTML}
+        <p class="lw-location-name">${escapeHtml(loc.name)}</p>
+        <p class="lw-location-sub">${escapeHtml(sublabel)}${loc.elevation ? ` · ${loc.elevation}m s.l.m.` : ""}</p>
+        <div class="lw-temp-row">
+          <span class="lw-icon" aria-hidden="true">${condIcon}</span>
+          <span class="lw-temp">${temp}°</span>
+        </div>
+        <p class="lw-cond">${condLabel}</p>
+        <p class="lw-feels">Percepita: ${feelsLike}°C</p>
+        ${precipHTML}
+        ${cloudHTML}
       </div>
-      <div class="timeslot-body">
-        <span class="timeslot-icon">${cond.icon}</span>
-        <span class="timeslot-main-value">${temp}°C</span>
-        <span class="timeslot-sub-value">💨 ${wind} km/h</span>
-        <span class="timeslot-label">${cond.label}</span>
-      </div>`;
-    dom.timeslotGrid.appendChild(card);
-  });
+      <div class="lw-stats">
+        <div class="lw-stat">
+          <span class="lw-stat-icon">💧</span>
+          <span class="lw-stat-label">Umidità</span>
+          <span class="lw-stat-value">${humidity}%</span>
+        </div>
+        <div class="lw-stat">
+          <span class="lw-stat-icon">💨</span>
+          <span class="lw-stat-label">Vento</span>
+          <span class="lw-stat-value">${windSpeed} km/h ${windDir}</span>
+        </div>
+        <div class="lw-stat">
+          <span class="lw-stat-icon">🌡️</span>
+          <span class="lw-stat-label">Max / Min</span>
+          <span class="lw-stat-value">${tMax}° / ${tMin}°</span>
+        </div>
+        <div class="lw-stat">
+          <span class="lw-stat-icon">☀️</span>
+          <span class="lw-stat-label">UV Max</span>
+          <span class="lw-stat-value">${weather.daily.uv_index_max[dayIdx]}</span>
+        </div>
+      </div>
+    </div>`;
 }
 
 /* ═══════════════════════════════════════
-   RENDER – PREVISIONI ORA PER ORA
-   Genera 24 card orarie per il giorno selezionato.
-   L'ora corrente (solo per "Oggi") è evidenziata
-   con bordo azzurro e badge "ORA".
+   RENDER – TIMELINE ORA PER ORA
+   24 card consecutive per il giorno selezionato.
+   Scroll automatico all'ora corrente per "Oggi".
 ═══════════════════════════════════════ */
-function renderHourlyForecast(weather, dayIdx) {
-  const container = dom.hourlyForecastContainer;
+function renderHourlyTimeline(weather, dayIdx) {
+  const container = dom.hourlyContainer;
   if (!container) return;
   container.innerHTML = "";
 
   const isToday = dayIdx === 0;
   const nowHour = new Date().getHours();
   const baseIdx = dayIdx * 24;
-
-  // Recupera array precipitation_probability (potrebbe non esserci)
   const precipProb = weather.hourly.precipitation_probability || [];
 
   for (let h = 0; h < 24; h++) {
@@ -605,42 +498,34 @@ function renderHourlyForecast(weather, dayIdx) {
     const isNow = isToday && h === nowHour;
 
     const card = document.createElement("div");
-    card.className = "hf-card" + (isNow ? " hf-now" : "");
-
-    // Badge "ORA" sull'ora corrente
-    const nowBadge = isNow ? `<span class="hf-now-badge">ORA</span>` : "";
-
-    // Probabilità pioggia — mostrata solo se > 0%
-    const precipHTML =
-      prob > 0 ? `<span class="hf-precip">💧 ${prob}%</span>` : "";
+    card.className = "hc-card" + (isNow ? " hc-now" : "");
 
     card.innerHTML = `
-      ${nowBadge}
-      <span class="hf-hour">${String(h).padStart(2, "0")}:00</span>
-      <span class="hf-icon" aria-hidden="true">${cond.icon}</span>
-      <span class="hf-temp">${temp}°</span>
-      ${precipHTML}`;
+      ${isNow ? '<span class="hc-now-badge">ORA</span>' : ""}
+      <span class="hc-hour">${String(h).padStart(2, "0")}:00</span>
+      <span class="hc-icon" aria-hidden="true">${cond.icon}</span>
+      <span class="hc-temp">${temp}°</span>
+      ${prob > 0 ? `<span class="hc-precip">💧 ${prob}%</span>` : ""}`;
 
     container.appendChild(card);
   }
 
-  // Scrolla automaticamente all'ora corrente se è "Oggi"
+  // Scrolla all'ora corrente
   if (isToday) {
     setTimeout(() => {
-      const nowCard = container.querySelector(".hf-now");
-      if (nowCard) {
+      const nowCard = container.querySelector(".hc-now");
+      if (nowCard)
         nowCard.scrollIntoView({
           behavior: "smooth",
           block: "nearest",
           inline: "center",
         });
-      }
-    }, 100);
+    }, 150);
   }
 }
 
 /* ═══════════════════════════════════════
-   RENDER – SERVICE PANEL (4 sub-tab)
+   RENDER – SERVICE PANEL
 ═══════════════════════════════════════ */
 function renderServicePanel(weather, marine, dayIdx, service) {
   switch (service) {
@@ -659,15 +544,23 @@ function renderServicePanel(weather, marine, dayIdx, service) {
   }
 }
 
-/* ── TAB 1: PREVISIONI (icona + descrizione cielo) ── */
+// Etichette fascia per i sub-tab (solo descrittive, non guidano la logica)
+const FASCE_LABEL = [
+  { label: "NOTTE", icon: "🌙", midHour: 3 },
+  { label: "MATTINA", icon: "🌅", midHour: 9 },
+  { label: "POMERIGGIO", icon: "☀️", midHour: 15 },
+  { label: "SERA", icon: "🌆", midHour: 21 },
+];
+
+/* ── TAB 1: PREVISIONI ── */
 function renderServiceForecast(weather, dayIdx) {
-  const cols = CONFIG.FASCE.map((fascia) => {
-    const hIdx = dayIdx * 24 + fascia.hour;
+  const cols = FASCE_LABEL.map((f) => {
+    const hIdx = dayIdx * 24 + f.midHour;
     const cond = wmoToCondition(weather.hourly.weathercode[hIdx]);
     const humidity = weather.hourly.relativehumidity_2m[hIdx];
     return `
       <div class="sp-col">
-        <div class="sp-col-header">${fascia.icon} ${fascia.label} <span style="font-weight:400;margin-left:auto">${fascia.hour}:00</span></div>
+        <div class="sp-col-header">${f.icon} ${f.label} <span style="font-weight:400;margin-left:auto">${String(f.midHour).padStart(2, "0")}:00</span></div>
         <div class="sp-row">
           <span class="sp-label">Condizioni</span>
           <span style="font-size:2rem;line-height:1.2">${cond.icon}</span>
@@ -682,10 +575,10 @@ function renderServiceForecast(weather, dayIdx) {
   dom.servicePanel.innerHTML = `<div class="sp-grid">${cols}</div>`;
 }
 
-/* ── TAB 2: TEMPERATURE (reale + percepita) ── */
+/* ── TAB 2: TEMPERATURE ── */
 function renderServiceTemperature(weather, dayIdx) {
-  const cols = CONFIG.FASCE.map((fascia) => {
-    const hIdx = dayIdx * 24 + fascia.hour;
+  const cols = FASCE_LABEL.map((f) => {
+    const hIdx = dayIdx * 24 + f.midHour;
     const temp = Math.round(weather.hourly.temperature_2m[hIdx]);
     const feels = Math.round(weather.hourly.apparent_temperature[hIdx]);
     const diff = temp - feels;
@@ -697,13 +590,13 @@ function renderServiceTemperature(weather, dayIdx) {
           : "come reale";
     return `
       <div class="sp-col">
-        <div class="sp-col-header">${fascia.icon} ${fascia.label}</div>
+        <div class="sp-col-header">${f.icon} ${f.label}</div>
         <div class="sp-row">
           <span class="sp-label">Temperatura reale</span>
           <span class="sp-value" style="font-size:1.8rem">${temp}°C</span>
         </div>
         <div class="sp-row">
-          <span class="sp-label">Temperatura percepita</span>
+          <span class="sp-label">Percepita</span>
           <span class="sp-value">${feels}°C</span>
           <span class="sp-sub">${diffStr}</span>
         </div>
@@ -714,13 +607,11 @@ function renderServiceTemperature(weather, dayIdx) {
 
 /* ── TAB 3: MARI E VENTO ── */
 function renderServiceWindSea(weather, marine, dayIdx) {
-  // Colonne vento (sempre disponibile)
-  const windCols = CONFIG.FASCE.map((fascia) => {
-    const hIdx = dayIdx * 24 + fascia.hour;
+  const windCols = FASCE_LABEL.map((f) => {
+    const hIdx = dayIdx * 24 + f.midHour;
     const speed = Math.round(weather.hourly.windspeed_10m[hIdx]);
     const deg = weather.hourly.winddirection_10m[hIdx];
     const dir = degToDir(deg);
-    // Forza Beaufort approssimata
     const bf =
       speed < 1
         ? 0
@@ -749,16 +640,14 @@ function renderServiceWindSea(weather, marine, dayIdx) {
                               : 12;
     return `
       <div class="sp-col">
-        <div class="sp-col-header">${fascia.icon} ${fascia.label}</div>
+        <div class="sp-col-header">${f.icon} ${f.label}</div>
         <div class="sp-row">
           <span class="sp-label">Velocità</span>
           <span class="sp-value" style="font-size:1.4rem">${speed} km/h</span>
         </div>
         <div class="sp-row">
           <span class="sp-label">Direzione</span>
-          <span class="sp-value">
-            <span class="wind-arrow" style="transform:rotate(${deg}deg)">↑</span> ${dir}
-          </span>
+          <span class="sp-value"><span class="wind-arrow" style="transform:rotate(${deg}deg)">↑</span> ${dir}</span>
         </div>
         <div class="sp-row">
           <span class="sp-label">Forza Beaufort</span>
@@ -767,43 +656,26 @@ function renderServiceWindSea(weather, marine, dayIdx) {
       </div>`;
   }).join("");
 
-  // Sezione mare
-  let marineHTML = "";
-  if (!marine) {
-    marineHTML = `
-      <div class="sea-unavailable">
-        🏔️ <span>Dati marittimi non disponibili per questa località.<br>
-        La stazione si trova nell'entroterra o in zona montuosa.</span>
-      </div>`;
-  } else {
-    const seaCols = CONFIG.FASCE.map((fascia) => {
-      const hIdx = dayIdx * 24 + fascia.hour;
-      const waveH = marine.hourly.wave_height[hIdx];
-      const waveP = marine.hourly.wave_period[hIdx];
-      const waveD = marine.hourly.wave_direction
-        ? degToDir(marine.hourly.wave_direction[hIdx])
-        : "–";
-      return `
-        <div class="sp-col">
-          <div class="sp-col-header">🌊 ${fascia.label}</div>
-          <div class="sp-row">
-            <span class="sp-label">Altezza onde</span>
-            <span class="sp-value" style="font-size:1.4rem">${waveH != null ? waveH.toFixed(1) + " m" : "–"}</span>
-          </div>
-          <div class="sp-row">
-            <span class="sp-label">Periodo</span>
-            <span class="sp-value">${waveP != null ? waveP.toFixed(0) + " s" : "–"}</span>
-          </div>
-          <div class="sp-row">
-            <span class="sp-label">Direzione</span>
-            <span class="sp-value">${waveD}</span>
-          </div>
-        </div>`;
-    }).join("");
-    marineHTML = `
-      <h3 style="font-size:0.85rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-sky);margin:var(--space-lg) 0 var(--space-md)">🌊 Condizioni del mare</h3>
-      <div class="sp-grid">${seaCols}</div>`;
-  }
+  let marineHTML = !marine
+    ? `<div class="sea-unavailable">🏔️ <span>Dati marittimi non disponibili per questa località.</span></div>`
+    : (() => {
+        const seaCols = FASCE_LABEL.map((f) => {
+          const hIdx = dayIdx * 24 + f.midHour;
+          const waveH = marine.hourly.wave_height[hIdx];
+          const waveP = marine.hourly.wave_period[hIdx];
+          const waveD = marine.hourly.wave_direction
+            ? degToDir(marine.hourly.wave_direction[hIdx])
+            : "–";
+          return `
+            <div class="sp-col">
+              <div class="sp-col-header">🌊 ${f.label}</div>
+              <div class="sp-row"><span class="sp-label">Altezza onde</span><span class="sp-value" style="font-size:1.4rem">${waveH != null ? waveH.toFixed(1) + " m" : "–"}</span></div>
+              <div class="sp-row"><span class="sp-label">Periodo</span><span class="sp-value">${waveP != null ? waveP.toFixed(0) + " s" : "–"}</span></div>
+              <div class="sp-row"><span class="sp-label">Direzione</span><span class="sp-value">${waveD}</span></div>
+            </div>`;
+        }).join("");
+        return `<h3 style="font-size:0.85rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-sky);margin:var(--space-lg) 0 var(--space-md)">🌊 Condizioni del mare</h3><div class="sp-grid">${seaCols}</div>`;
+      })();
 
   dom.servicePanel.innerHTML = `
     <h3 style="font-size:0.85rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-sky);margin-bottom:var(--space-md)">💨 Vento</h3>
@@ -811,19 +683,18 @@ function renderServiceWindSea(weather, marine, dayIdx) {
     ${marineHTML}`;
 }
 
-/* ── TAB 4: INDICE UV ── */
+/* ── TAB 4: UV ── */
 function renderServiceUV(weather, dayIdx) {
-  const cols = CONFIG.FASCE.map((fascia) => {
-    const hIdx = dayIdx * 24 + fascia.hour;
+  const cols = FASCE_LABEL.map((f) => {
+    const hIdx = dayIdx * 24 + f.midHour;
     const uv = weather.hourly.uv_index[hIdx];
     const uvR = uv != null ? Math.round(uv) : 0;
     const meta = uvMeta(uvR);
     const pct = Math.min(100, (uvR / 11) * 100);
-    // Di notte l'UV è sempre 0
-    const isNight = fascia.hour === 3;
+    const isNight = f.midHour < 6;
     return `
       <div class="sp-col">
-        <div class="sp-col-header">${fascia.icon} ${fascia.label}</div>
+        <div class="sp-col-header">${f.icon} ${f.label}</div>
         <div class="sp-row">
           <span class="sp-label">Indice UV</span>
           <span class="sp-value" style="font-size:2rem;color:${meta.color}">${isNight ? "–" : uvR}</span>
@@ -832,11 +703,9 @@ function renderServiceUV(weather, dayIdx) {
         ${
           !isNight
             ? `
-        <div class="sp-row" style="margin-top:4px">
+        <div class="sp-row">
           <span class="sp-label">Intensità</span>
-          <div class="uv-bar-wrap">
-            <div class="uv-bar" style="width:${pct}%;background:${meta.color}"></div>
-          </div>
+          <div class="uv-bar-wrap"><div class="uv-bar" style="width:${pct}%;background:${meta.color}"></div></div>
         </div>`
             : ""
         }
@@ -859,12 +728,27 @@ function uvAdvice(idx, isNight) {
 }
 
 /* ═══════════════════════════════════════
+   UI – STATI
+═══════════════════════════════════════ */
+function showLoadingState() {
+  dom.forecastSection.hidden = false;
+  dom.liveWeatherCard.innerHTML = `
+    <div class="card-empty-state" style="color:rgba(255,255,255,0.7)">
+      <span class="empty-icon">⏳</span><p>Caricamento dati meteo…</p>
+    </div>`;
+  dom.hourlyContainer.innerHTML = "";
+  dom.dayTabs.innerHTML = "";
+  dom.servicePanel.innerHTML = "";
+}
+
+/* ═══════════════════════════════════════
    UI – AUTOCOMPLETE
 ═══════════════════════════════════════ */
 function showAutocompleteLoading() {
   dom.autocompleteList.innerHTML = `<li class="autocomplete-loading"><span class="ac-spinner"></span>Ricerca in corso…</li>`;
   dom.autocompleteList.hidden = false;
   dom.searchInput.setAttribute("aria-expanded", "true");
+  injectAutocompleteCSS();
 }
 function showAutocompleteError() {
   dom.autocompleteList.innerHTML = `<li class="autocomplete-empty">⚠️ Connessione non disponibile.</li>`;
@@ -882,7 +766,7 @@ function renderAutocomplete(results, query) {
     dom.autocompleteList.hidden = false;
     return;
   }
-  results.forEach((r, i) => {
+  results.forEach((r) => {
     const li = document.createElement("li");
     li.setAttribute("role", "option");
     li.setAttribute("tabindex", "-1");
@@ -919,9 +803,6 @@ function handleDropdownKeyboard(e) {
   }
 }
 
-/* ═══════════════════════════════════════
-   SELEZIONE CITTÀ
-═══════════════════════════════════════ */
 function selectLocation(result) {
   state.selectedLocation = {
     name: result.name,
@@ -939,37 +820,13 @@ function selectLocation(result) {
 }
 
 /* ═══════════════════════════════════════
-   UI – LOADING DASHBOARD
+   CSS DINAMICI AUTOCOMPLETE
 ═══════════════════════════════════════ */
-function showDashboardLoading() {
-  dom.currentWeatherPanel.innerHTML = `<div class="card-empty-state"><span class="empty-icon">⏳</span><p>Caricamento dati meteo…</p></div>`;
-  dom.forecastSection.hidden = true;
-}
-
-/* ═══════════════════════════════════════
-   CSS DINAMICI
-═══════════════════════════════════════ */
-function injectCurrentWeatherCSS() {
-  if (document.getElementById("cw-dynamic-css")) return;
+function injectAutocompleteCSS() {
+  if (document.getElementById("ac-css")) return;
   const s = document.createElement("style");
-  s.id = "cw-dynamic-css";
+  s.id = "ac-css";
   s.textContent = `
-    .current-weather-layout{width:100%;display:flex;flex-wrap:wrap;gap:24px;align-items:center}
-    .cw-main{flex:1;min-width:200px}
-    .cw-location{display:flex;flex-direction:column;margin-bottom:8px}
-    .cw-city-name{font-family:var(--font-display);font-size:1.5rem;font-weight:700}
-    .cw-region{font-size:0.85rem;color:var(--color-text-muted)}
-    .cw-elevation{font-size:0.75rem;color:var(--color-text-muted)}
-    .cw-temp-block{display:flex;align-items:center;gap:8px;margin:8px 0 4px}
-    .cw-icon{font-size:3rem;line-height:1}
-    .cw-temp{font-family:var(--font-display);font-size:4rem;font-weight:700;line-height:1;color:var(--color-text-primary)}
-    .cw-condition{font-size:1.1rem;font-weight:500;color:var(--color-sky)}
-    .cw-feels{font-size:0.85rem;color:var(--color-text-muted);margin-top:4px}
-    .cw-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;flex:1;min-width:200px}
-    .cw-stat{background:var(--color-bg);border-radius:var(--radius-sm);padding:12px;display:flex;flex-direction:column;gap:2px}
-    .cw-stat-icon{font-size:1.1rem}
-    .cw-stat-label{font-size:0.75rem;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.05em}
-    .cw-stat strong{font-size:0.95rem;font-weight:600}
     .autocomplete-loading{display:flex;align-items:center;gap:10px;padding:14px 20px;font-size:0.9rem;color:var(--color-text-muted)}
     .ac-spinner{width:16px;height:16px;border:2px solid var(--color-sky-light);border-top-color:var(--color-sky);border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0}
     @keyframes spin{to{transform:rotate(360deg)}}
@@ -983,8 +840,6 @@ function injectCurrentWeatherCSS() {
 /* ═══════════════════════════════════════
    EVENT LISTENERS
 ═══════════════════════════════════════ */
-
-// Ricerca con debounce
 const handleSearchInput = debounce(async function () {
   const q = dom.searchInput.value.trim();
   if (q.length < CONFIG.MIN_CHARS) {
@@ -997,7 +852,6 @@ const handleSearchInput = debounce(async function () {
 }, CONFIG.DEBOUNCE_MS);
 
 dom.searchInput.addEventListener("input", handleSearchInput);
-
 dom.searchInput.addEventListener("keydown", function (e) {
   if (e.key === "ArrowDown") {
     e.preventDefault();
@@ -1006,19 +860,16 @@ dom.searchInput.addEventListener("keydown", function (e) {
   else if (e.key === "Enter")
     dom.autocompleteList.querySelector(".autocomplete-item")?.click();
 });
-
 dom.searchBtn.addEventListener("click", () => {
   const first = dom.autocompleteList.querySelector(".autocomplete-item");
   if (first) first.click();
   else if (dom.searchInput.value.trim().length >= CONFIG.MIN_CHARS)
     handleSearchInput();
 });
-
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".search-wrapper")) closeAutocomplete();
 });
 
-// Sub-tab servizi
 dom.serviceTabs.forEach((btn) => {
   btn.addEventListener("click", function () {
     state.activeService = this.dataset.service;
@@ -1035,17 +886,14 @@ dom.serviceTabs.forEach((btn) => {
   });
 });
 
-// Tag rapidi
 dom.tagButtons.forEach((btn) => {
   btn.addEventListener("click", async function () {
-    const name = this.dataset.city;
-    dom.searchInput.value = name;
-    const results = await fetchLocations(name);
+    dom.searchInput.value = this.dataset.city;
+    const results = await fetchLocations(this.dataset.city);
     if (results && results.length > 0) selectLocation(results[0]);
   });
 });
 
-// Hamburger
 dom.hamburger.addEventListener("click", function () {
   state.menuOpen = !state.menuOpen;
   this.classList.toggle("open", state.menuOpen);
@@ -1064,18 +912,35 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
 });
 
 /* ═══════════════════════════════════════
-   INIT
+   INIT – Carica Roma di default all'avvio
 ═══════════════════════════════════════ */
 (function init() {
-  injectCurrentWeatherCSS();
+  injectAutocompleteCSS();
+
   console.log(
-    "%c🌤️ MeteoPunto.com – FASE 3 + Nowcasting caricata\n" +
-      "%c📅 Previsioni: 16 giorni · 4 fasce · 4 servizi\n" +
-      "%c🌊 Marine API: rilevamento automatico entroterra\n" +
-      "%c⚡ Nowcasting: cloud_cover + precipitation in tempo reale",
+    "%c🌤️ MeteoPunto.com – Timeline redesign\n" +
+      "%c📡 Scheda Live + Timeline 24h + 16 giorni\n" +
+      "%c⚡ Nowcasting: cloud_cover + precipitation live",
     "color:#FFD700;font-weight:700;font-size:14px;",
     "color:#00A8E8;font-weight:500;",
     "color:#2ECC71;font-weight:500;",
-    "color:#E74C3C;font-weight:500;",
   );
+
+  // Città di default: Roma
+  const romaDefault = {
+    name: "Roma",
+    region: "Lazio",
+    country: "Italia",
+    latitude: 41.8919,
+    longitude: 12.5113,
+    elevation: 37,
+    timezone: "Europe/Rome",
+  };
+
+  // Mostra "Roma" nella barra di ricerca
+  dom.searchInput.value = "Roma, Lazio";
+
+  // Carica subito i dati meteo di Roma
+  state.selectedLocation = romaDefault;
+  loadWeatherData(romaDefault);
 })();
