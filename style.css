@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   METEOPUNTO.COM – style.css  |  FASE 3
+   METEOPUNTO.COM – style.css  |  Redesign Timeline
    ═══════════════════════════════════════════════════════════ */
 
 /* ─── 1. DESIGN TOKENS ─────────────────────────────────── */
@@ -17,9 +17,8 @@
   --color-text-muted: #8fa3af;
   --color-text-inverted: #ffffff;
   --color-accent: #00a8e8;
-  --color-warning: #ff8c00;
-  --color-success: #2ecc71;
   --color-danger: #e74c3c;
+  --color-success: #2ecc71;
   --nav-gradient: linear-gradient(
     135deg,
     #ffd700 0%,
@@ -419,22 +418,7 @@ input {
   background: rgba(255, 255, 255, 0.28);
 }
 
-/* ─── 6. CARD BASE ──────────────────────────────────────── */
-.card {
-  background: var(--color-bg-card);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
-  transition:
-    box-shadow var(--transition-base),
-    transform var(--transition-base);
-}
-.card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-/* ─── 7. DASHBOARD ──────────────────────────────────────── */
+/* ─── 6. LAYOUT BASE ────────────────────────────────────── */
 .dashboard {
   padding-bottom: var(--space-2xl);
 }
@@ -468,12 +452,11 @@ input {
   color: var(--color-sky);
   font-family: var(--font-body);
 }
-.current-weather-card {
-  padding: var(--space-xl);
-  min-height: 180px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.card {
+  background: var(--color-bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-sm);
 }
 .card-empty-state {
   display: flex;
@@ -482,6 +465,7 @@ input {
   gap: var(--space-sm);
   color: var(--color-text-muted);
   font-size: 0.95rem;
+  padding: var(--space-xl);
 }
 .empty-icon {
   font-size: 2.5rem;
@@ -500,37 +484,36 @@ input {
   background: transparent;
   box-shadow: none;
 }
-.map-placeholder:hover {
-  box-shadow: none;
-  transform: none;
+
+/* ─── 7. STATO VUOTO HERO ───────────────────────────────── */
+.empty-hero-section {
+  background: transparent !important;
+}
+.empty-hero-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-2xl) var(--space-lg);
+  gap: var(--space-md);
+}
+.empty-hero-icon {
+  font-size: 4rem;
+  opacity: 0.3;
+}
+.empty-hero-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+.empty-hero-sub {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  max-width: 400px;
 }
 
-/* ─── 8. SKELETON ───────────────────────────────────────── */
-@keyframes skeleton-shimmer {
-  0% {
-    background-position: -400px 0;
-  }
-  100% {
-    background-position: 400px 0;
-  }
-}
-.skeleton,
-.skeleton * {
-  background: linear-gradient(90deg, #e8edf0 25%, #f2f5f4 50%, #e8edf0 75%);
-  background-size: 800px 100%;
-  animation: skeleton-shimmer 1.6s infinite linear;
-  border-radius: var(--radius-md);
-  pointer-events: none;
-  border-color: transparent;
-  box-shadow: none;
-  color: transparent;
-}
-
-/* ═══════════════════════════════════════════════════════════
-   FASE 3 – STILI NUOVI
-   ═══════════════════════════════════════════════════════════ */
-
-/* ─── 9. DAY TABS (16 giorni) ───────────────────────────── */
+/* ─── 8. TAB 16 GIORNI ──────────────────────────────────── */
 .day-tabs-wrapper {
   margin-bottom: var(--space-lg);
 }
@@ -539,6 +522,7 @@ input {
   padding-bottom: 4px;
   scrollbar-width: thin;
   scrollbar-color: var(--color-sky-light) transparent;
+  -webkit-overflow-scrolling: touch;
 }
 .day-tabs-scroll::-webkit-scrollbar {
   height: 4px;
@@ -603,78 +587,276 @@ input {
   color: rgba(255, 255, 255, 0.85);
 }
 
-/* ─── 10. TIMESLOT GRID (4 fasce orarie) ───────────────── */
-.timeslot-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+/* ─── 9. SCHEDA LIVE ────────────────────────────────────── */
+.live-weather-card {
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  margin-bottom: var(--space-lg);
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
+}
+.live-weather-card::before {
+  content: "";
+  position: absolute;
+  width: 280px;
+  height: 280px;
+  background: rgba(0, 168, 232, 0.04);
+  border-radius: 50%;
+  top: -80px;
+  right: -60px;
+  pointer-events: none;
+}
+.live-weather-card .card-empty-state {
+  color: var(--color-text-muted);
+  padding: 0;
+}
+
+/* Layout interno scheda live */
+.lw-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xl);
+  align-items: center;
+}
+.lw-main {
+  flex: 1;
+  min-width: 220px;
+}
+.lw-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--color-sky-light);
+  border: 1px solid rgba(0, 168, 232, 0.2);
+  border-radius: var(--radius-pill);
+  padding: 3px 12px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-sm);
+  color: var(--color-sky-deep);
+}
+.lw-badge-dot {
+  width: 6px;
+  height: 6px;
+  background: #2ecc71;
+  border-radius: 50%;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.7);
+  }
+}
+.lw-location-name {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+.lw-location-sub {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-md);
+}
+.lw-temp-row {
+  display: flex;
+  align-items: center;
   gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+.lw-icon {
+  font-size: 3.5rem;
+  line-height: 1;
+}
+.lw-temp {
+  font-family: var(--font-display);
+  font-size: 4.5rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--color-text-primary);
+}
+.lw-cond {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-sky);
+  margin-bottom: 4px;
+}
+.lw-feels {
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+}
+.lw-precip {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-sky-deep);
+  margin-top: 4px;
+}
+.lw-cloud {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+/* Griglia stats — sfondo grigio chiaro */
+.lw-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm);
+  flex: 1;
+  min-width: 200px;
+}
+.lw-stat {
+  background: #f0f2f4;
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.lw-stat-icon {
+  font-size: 1rem;
+}
+.lw-stat-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+.lw-stat-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* ─── 10. TIMELINE ORA PER ORA ──────────────────────────── */
+.hourly-section {
   margin-bottom: var(--space-xl);
 }
-.timeslot-card {
+.hourly-section-header {
+  margin-bottom: var(--space-md);
+}
+.hourly-section-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+.hourly-scroll {
+  overflow-x: auto;
+  padding-bottom: var(--space-sm);
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-sky-light) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+.hourly-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.hourly-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-sky-light);
+  border-radius: 4px;
+}
+.hourly-container {
+  display: flex;
+  gap: 8px;
+  min-width: max-content;
+  padding: 4px 2px 6px;
+}
+
+/* Card singola ora */
+.hc-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 12px 10px;
+  min-width: 64px;
   background: var(--color-bg-card);
   border-radius: var(--radius-md);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
-  overflow: hidden;
   transition:
-    box-shadow var(--transition-base),
-    transform var(--transition-base);
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+  position: relative;
 }
-.timeslot-card:hover {
+.hc-card:hover {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
-.timeslot-header {
-  padding: 10px 16px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
+
+/* Card ora corrente */
+.hc-card.hc-now {
+  border-color: var(--color-sky);
+  background: var(--color-sky-light);
+  box-shadow:
+    0 0 0 2px var(--color-sky),
+    var(--shadow-sm);
+}
+.hc-now-badge {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-sky);
   color: #fff;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
 }
-.timeslot-header.notte {
-  background: linear-gradient(135deg, #1a1a3e, #2d3561);
+.hc-hour {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  letter-spacing: 0.02em;
 }
-.timeslot-header.mattina {
-  background: linear-gradient(135deg, #f77f00, #d62828);
+.hc-card.hc-now .hc-hour {
+  color: var(--color-sky-deep);
 }
-.timeslot-header.pomeriggio {
-  background: linear-gradient(135deg, #f9c74f, #f3722c);
-}
-.timeslot-header.sera {
-  background: linear-gradient(135deg, #4361ee, #7209b7);
-}
-.timeslot-body {
-  padding: var(--space-md);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-sm);
-  text-align: center;
-  min-height: 120px;
-  justify-content: center;
-}
-.timeslot-icon {
-  font-size: 2rem;
+.hc-icon {
+  font-size: 1.5rem;
   line-height: 1;
 }
-.timeslot-main-value {
+.hc-temp {
   font-family: var(--font-display);
-  font-size: 1.4rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--color-text-primary);
 }
-.timeslot-sub-value {
-  font-size: 0.82rem;
-  color: var(--color-text-muted);
+.hc-precip {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--color-sky-deep);
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
-.timeslot-label {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
+
+/* Linea temporale sotto le card */
+.hourly-timeline-line {
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--color-sky-light) 0%,
+    var(--color-sky) 50%,
+    var(--color-sky-light) 100%
+  );
+  border-radius: 2px;
+  margin: 0 2px 12px;
 }
 
 /* ─── 11. SERVICE SUB-TABS ──────────────────────────────── */
@@ -719,10 +901,9 @@ input {
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-sm);
   padding: var(--space-lg);
-  min-height: 200px;
+  min-height: 180px;
+  margin-bottom: var(--space-xl);
 }
-
-/* Layout interno panel: griglia 4 colonne (una per fascia) */
 .sp-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -767,8 +948,6 @@ input {
   font-size: 0.75rem;
   color: var(--color-text-secondary);
 }
-
-/* Barra UV */
 .uv-bar-wrap {
   width: 100%;
   height: 6px;
@@ -782,8 +961,6 @@ input {
   border-radius: 3px;
   transition: width 0.5s ease;
 }
-
-/* Badge UV */
 .uv-badge {
   display: inline-block;
   padding: 2px 10px;
@@ -792,8 +969,6 @@ input {
   font-weight: 700;
   color: #fff;
 }
-
-/* Avviso mare non disponibile */
 .sea-unavailable {
   background: var(--color-bg);
   border: 1px dashed var(--border-color);
@@ -808,15 +983,29 @@ input {
   justify-content: center;
   gap: var(--space-sm);
 }
-
-/* Freccia vento */
 .wind-arrow {
   display: inline-block;
   font-size: 1rem;
   transition: transform 0.4s ease;
 }
 
-/* ─── 13. FOOTER ────────────────────────────────────────── */
+/* ─── 13. SKELETON ──────────────────────────────────────── */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, #e8edf0 25%, #f2f5f4 50%, #e8edf0 75%);
+  background-size: 800px 100%;
+  animation: skeleton-shimmer 1.6s infinite linear;
+  border-radius: var(--radius-md);
+}
+
+/* ─── 14. FOOTER ────────────────────────────────────────── */
 .site-footer {
   background: #1e2b38;
   color: rgba(255, 255, 255, 0.75);
@@ -867,138 +1056,7 @@ input {
   text-align: center;
 }
 
-/* ─── 13b. PREVISIONI ORA PER ORA ───────────────────────── */
-.hourly-forecast-wrapper {
-  margin-bottom: var(--space-xl);
-}
-
-.hourly-forecast-header {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-bottom: var(--space-md);
-}
-
-.hourly-forecast-title {
-  font-family: var(--font-display);
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-/* Scroll container */
-.hourly-forecast-scroll {
-  overflow-x: auto;
-  padding-bottom: var(--space-sm);
-  /* Scrollbar sottile e discreta */
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-sky-light) transparent;
-  /* Bordo arrotondato con fade ai lati su webkit */
-  -webkit-overflow-scrolling: touch;
-}
-.hourly-forecast-scroll::-webkit-scrollbar {
-  height: 4px;
-}
-.hourly-forecast-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-.hourly-forecast-scroll::-webkit-scrollbar-thumb {
-  background: var(--color-sky-light);
-  border-radius: 4px;
-}
-
-/* Flex strip delle card */
-.hourly-forecast-container {
-  display: flex;
-  gap: 10px;
-  min-width: max-content;
-  padding: 4px 2px 8px;
-}
-
-/* Singola card oraria */
-.hf-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 5px;
-  padding: 12px 10px;
-  min-width: 68px;
-  background: var(--color-bg-card);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
-  transition:
-    box-shadow var(--transition-fast),
-    transform var(--transition-fast);
-  cursor: default;
-  position: relative;
-}
-.hf-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
-}
-
-/* Card dell'ora corrente — evidenziata */
-.hf-card.hf-now {
-  border-color: var(--color-sky);
-  background: var(--color-sky-light);
-  box-shadow:
-    0 0 0 2px var(--color-sky),
-    var(--shadow-sm);
-}
-
-/* Ora */
-.hf-hour {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--color-text-muted);
-  letter-spacing: 0.03em;
-}
-.hf-card.hf-now .hf-hour {
-  color: var(--color-sky-deep);
-}
-
-/* Badge ORA */
-.hf-now-badge {
-  position: absolute;
-  top: -8px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--color-sky);
-  color: #fff;
-  font-size: 0.55rem;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: var(--radius-pill);
-  letter-spacing: 0.06em;
-  white-space: nowrap;
-}
-
-/* Icona meteo */
-.hf-icon {
-  font-size: 1.6rem;
-  line-height: 1;
-}
-
-/* Temperatura */
-.hf-temp {
-  font-family: var(--font-display);
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-/* Probabilità pioggia */
-.hf-precip {
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--color-sky-deep);
-  display: flex;
-  align-items: center;
-  gap: 2px;
-}
-
-/* ─── 14. RESPONSIVE ────────────────────────────────────── */
+/* ─── 15. RESPONSIVE ────────────────────────────────────── */
 @media (max-width: 1024px) {
   .nav-links {
     display: none;
@@ -1012,15 +1070,8 @@ input {
   .nav-container {
     justify-content: space-between;
   }
-  .timeslot-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
   .sp-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
-  .day-tab {
-    min-width: 64px;
-    padding: 8px 12px;
   }
 }
 @media (max-width: 640px) {
@@ -1029,15 +1080,17 @@ input {
     --space-xl: 28px;
     --nav-height: 56px;
   }
-  .timeslot-grid {
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-sm);
+  .lw-layout {
+    gap: var(--space-lg);
+  }
+  .lw-temp {
+    font-size: 3.5rem;
+  }
+  .lw-stats {
+    grid-template-columns: repeat(2, 1fr);
   }
   .sp-grid {
     grid-template-columns: 1fr 1fr;
-  }
-  .service-tabs-bar {
-    gap: 4px;
   }
   .service-tab {
     padding: 8px 12px;

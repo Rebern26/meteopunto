@@ -134,28 +134,8 @@
 
     <!-- MAIN DASHBOARD -->
     <main id="main-content" class="dashboard" aria-label="Dashboard meteo">
-      <!-- SEZIONE: Meteo Attuale -->
-      <section class="dashboard-section" aria-labelledby="current-heading">
-        <div class="section-container">
-          <h2 id="current-heading" class="section-title">
-            <span class="section-eyebrow">In tempo reale</span>Meteo Adesso
-          </h2>
-          <div
-            class="current-weather-card card"
-            id="current-weather-panel"
-            aria-live="polite"
-            aria-atomic="true"
-          >
-            <div class="card-empty-state">
-              <span class="empty-icon" aria-hidden="true">🔍</span>
-              <p>Cerca una città per vedere il meteo attuale</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       <!-- ═══════════════════════════════════════
-         SEZIONE FASE 3: PREVISIONI 16 GIORNI
+         SEZIONE PREVISIONI PRINCIPALE
     ═══════════════════════════════════════ -->
       <section
         class="dashboard-section forecast-section"
@@ -164,7 +144,25 @@
         hidden
       >
         <div class="section-container">
-          <h2 id="forecast-heading" class="section-title">
+          <!-- ═══ SCHEDA LIVE – METEO IN TEMPO REALE ═══ -->
+          <div
+            class="live-weather-card"
+            id="live-weather-card"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <div class="card-empty-state">
+              <span class="empty-icon" aria-hidden="true">🔍</span>
+              <p>Cerca una città per vedere il meteo attuale</p>
+            </div>
+          </div>
+
+          <!-- TITOLO 16 GIORNI -->
+          <h2
+            id="forecast-heading"
+            class="section-title"
+            style="margin-top: var(--space-lg)"
+          >
             <span class="section-eyebrow">Fino a 16 giorni</span>Previsioni
             Dettagliate
           </h2>
@@ -181,37 +179,23 @@
                 id="day-tabs"
                 role="tablist"
                 aria-label="Giorni disponibili"
-              >
-                <!-- Popolato da app.js -->
-              </div>
+              ></div>
             </div>
           </div>
 
-          <!-- GRIGLIA 4 FASCE ORARIE -->
-          <div
-            class="timeslot-grid"
-            id="timeslot-grid"
-            aria-label="Fasce orarie del giorno selezionato"
-          >
-            <!-- Popolato da app.js -->
-          </div>
-
-          <!-- PREVISIONI ORA PER ORA -->
-          <div class="hourly-forecast-wrapper" id="hourly-forecast-wrapper">
-            <div class="hourly-forecast-header">
+          <!-- ═══ TIMELINE ORA PER ORA ═══ -->
+          <div class="hourly-section" id="hourly-section">
+            <div class="hourly-section-header">
               <span class="section-eyebrow">Dettaglio completo</span>
-              <h3 class="hourly-forecast-title">Previsioni Ora per Ora</h3>
+              <h3 class="hourly-section-title">Previsioni Ora per Ora</h3>
             </div>
             <div
-              class="hourly-forecast-scroll"
+              class="hourly-scroll"
               role="region"
-              aria-label="Previsioni orarie"
+              aria-label="Timeline oraria"
               tabindex="0"
             >
-              <div
-                id="hourly-forecast-container"
-                class="hourly-forecast-container"
-              >
+              <div id="hourly-container" class="hourly-container">
                 <!-- Popolato da app.js -->
               </div>
             </div>
@@ -267,9 +251,7 @@
             id="service-panel"
             role="tabpanel"
             aria-live="polite"
-          >
-            <!-- Popolato da app.js -->
-          </div>
+          ></div>
         </div>
       </section>
 
