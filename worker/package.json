@@ -1,0 +1,14 @@
+{
+  "name": "meteopunto-worker",
+  "version": "1.0.0",
+  "description": "MeteoPunto.com – Cloudflare Worker Backend Proxy",
+  "main": "worker.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "^3.78.0"
+  }
+}

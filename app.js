@@ -951,13 +951,16 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
 });
 
 /* ═══════════════════════════════════════
-   INIT – Carica Roma di default all'avvio
+   INIT – Geolocalizzazione automatica via Cloudflare
+   1. Chiama /api/geolocate (nessun permesso browser)
+   2. Cloudflare legge l'IP e restituisce lat/lon/città
+   3. Se fallisce → fallback Roma
 ═══════════════════════════════════════ */
-(function init() {
+(async function init() {
   injectAutocompleteCSS();
 
   console.log(
-    "%c🌤️ MeteoPunto.com – Timeline redesign\n" +
+    "%c🌤️ MeteoPunto.com – Geolocalizzazione IP attiva\n" +
       "%c📡 Scheda Live + Timeline 24h + 16 giorni\n" +
       "%c⚡ Nowcasting: cloud_cover + precipitation live",
     "color:#FFD700;font-weight:700;font-size:14px;",
@@ -965,21 +968,81 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
     "color:#2ECC71;font-weight:500;",
   );
 
-  // Città di default: Roma
+  // Fallback Roma se tutto fallisce
   const romaDefault = {
     name: "Roma",
     region: "Lazio",
     country: "Italia",
     latitude: 41.8919,
     longitude: 12.5113,
-    elevation: 37,
+    elevation: null,
     timezone: "Europe/Rome",
   };
 
-  // Mostra "Roma" nella barra di ricerca
-  dom.searchInput.value = "Roma, Lazio";
+  // Determina se siamo in sviluppo locale o produzione
+  const isLocal =
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname === "localhost";
 
-  // Carica subito i dati meteo di Roma
-  state.selectedLocation = romaDefault;
-  loadWeatherData(romaDefault);
+  if (isLocal) {
+    // In sviluppo locale Cloudflare non è disponibile → usa Roma
+    console.log(
+      "%c🏠 Sviluppo locale → uso Roma come default",
+      "color:#FF8C00;font-weight:500;",
+    );
+    dom.searchInput.value = "Roma, Lazio";
+    state.selectedLocation = romaDefault;
+    loadWeatherData(romaDefault);
+    return;
+  }
+
+  // In produzione: chiama il Worker per rilevare la posizione dall'IP
+  try {
+    dom.searchInput.value = "📍 Rilevamento posizione…";
+    dom.searchInput.disabled = true;
+
+    const res = await fetch("/api/geolocate");
+    const data = await res.json();
+
+    dom.searchInput.disabled = false;
+
+    if (data.success && data.latitude && data.longitude) {
+      // Geolocalizzazione riuscita
+      const cityName = data.city || "La tua posizione";
+      console.log(
+        `%c📍 Posizione rilevata: ${cityName} (${data.latitude}, ${data.longitude})`,
+        "color:#2ECC71;font-weight:600;",
+      );
+
+      const location = {
+        name: cityName,
+        region: "",
+        country: data.country || "",
+        latitude: data.latitude,
+        longitude: data.longitude,
+        elevation: null,
+        timezone: data.timezone || "Europe/Rome",
+      };
+
+      dom.searchInput.value = cityName;
+      state.selectedLocation = location;
+      loadWeatherData(location);
+    } else {
+      // Fallback: Worker ha risposto ma senza coordinate valide
+      console.log(
+        "%c⚠️ Geolocalizzazione IP non disponibile → uso Roma",
+        "color:#FF8C00;font-weight:500;",
+      );
+      dom.searchInput.value = "Roma, Lazio";
+      state.selectedLocation = romaDefault;
+      loadWeatherData(romaDefault);
+    }
+  } catch (err) {
+    // Errore di rete o Worker non raggiungibile → fallback Roma
+    console.error("MeteoPunto – Errore geolocate:", err);
+    dom.searchInput.disabled = false;
+    dom.searchInput.value = "Roma, Lazio";
+    state.selectedLocation = romaDefault;
+    loadWeatherData(romaDefault);
+  }
 })();
