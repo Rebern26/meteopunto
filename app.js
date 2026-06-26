@@ -353,6 +353,45 @@ function renderDayTabs(weather, selectedIdx) {
         b.classList.toggle("active", i === idx);
         b.setAttribute("aria-selected", i === idx);
       });
+
+      // Aggiorna testo dinamico sotto "Previsioni Ora per Ora"
+      const giornoEl = document.getElementById("giorno-selezionato-testo");
+      if (giornoEl) {
+        if (idx === 0) {
+          giornoEl.textContent = "📅 Oggi";
+        } else if (idx === 1) {
+          giornoEl.textContent = "📅 Domani";
+        } else {
+          // Costruisce "Venerdì 26 Giugno" dalla data del giorno
+          const dateStr = weather.daily.time[idx];
+          const d = new Date(dateStr);
+          const giorniEstesi = [
+            "Domenica",
+            "Lunedì",
+            "Martedì",
+            "Mercoledì",
+            "Giovedì",
+            "Venerdì",
+            "Sabato",
+          ];
+          const mesiEstesi = [
+            "Gennaio",
+            "Febbraio",
+            "Marzo",
+            "Aprile",
+            "Maggio",
+            "Giugno",
+            "Luglio",
+            "Agosto",
+            "Settembre",
+            "Ottobre",
+            "Novembre",
+            "Dicembre",
+          ];
+          giornoEl.textContent = `📅 ${giorniEstesi[d.getDay()]} ${d.getDate()} ${mesiEstesi[d.getMonth()]}`;
+        }
+      }
+
       renderLiveWeather(state.weatherData, state.selectedLocation, idx);
       renderHourlyTimeline(state.weatherData, idx);
       renderServicePanel(

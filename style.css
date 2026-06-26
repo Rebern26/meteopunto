@@ -753,6 +753,14 @@ input {
   font-weight: 700;
   color: var(--color-text-primary);
 }
+
+#giorno-selezionato-testo {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-sky);
+  margin-top: 2px;
+  letter-spacing: 0.01em;
+}
 .hourly-scroll {
   overflow-x: auto;
   padding-bottom: var(--space-sm);
