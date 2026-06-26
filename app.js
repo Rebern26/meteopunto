@@ -1001,7 +1001,9 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
     dom.searchInput.value = "📍 Rilevamento posizione…";
     dom.searchInput.disabled = true;
 
-    const res = await fetch("/api/geolocate");
+    const res = await fetch(
+      "https://meteopunto-worker.hentzeldieter.workers.dev/api/geolocate",
+    );
     const data = await res.json();
 
     dom.searchInput.disabled = false;
