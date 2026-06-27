@@ -1009,17 +1009,33 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
     dom.searchInput.disabled = false;
 
     if (data.success && data.latitude && data.longitude) {
-      // Geolocalizzazione riuscita
-      const cityName = data.city || "La tua posizione";
-      console.log(
-        `%c📍 Posizione rilevata: ${cityName} (${data.latitude}, ${data.longitude})`,
-        "color:#2ECC71;font-weight:600;",
-      );
+      // Ottieni nome città in italiano via Nominatim
+      let cityName = "La tua posizione";
+      let region = "";
+      let country = "";
+
+      try {
+        const nomRes = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?lat=${data.latitude}&lon=${data.longitude}&format=json&accept-language=it`,
+        );
+        const nomData = await nomRes.json();
+        cityName =
+          nomData.address?.city ||
+          nomData.address?.town ||
+          nomData.address?.village ||
+          nomData.address?.municipality ||
+          "La tua posizione";
+        region = nomData.address?.state || "";
+        country = nomData.address?.country || "";
+      } catch {
+        cityName = data.city || "La tua posizione";
+        country = data.country || "";
+      }
 
       const location = {
         name: cityName,
-        region: "",
-        country: data.country || "",
+        region,
+        country,
         latitude: data.latitude,
         longitude: data.longitude,
         elevation: null,
@@ -1030,17 +1046,11 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
       state.selectedLocation = location;
       loadWeatherData(location);
     } else {
-      // Fallback: Worker ha risposto ma senza coordinate valide
-      console.log(
-        "%c⚠️ Geolocalizzazione IP non disponibile → uso Roma",
-        "color:#FF8C00;font-weight:500;",
-      );
       dom.searchInput.value = "Roma, Lazio";
       state.selectedLocation = romaDefault;
       loadWeatherData(romaDefault);
     }
   } catch (err) {
-    // Errore di rete o Worker non raggiungibile → fallback Roma
     console.error("MeteoPunto – Errore geolocate:", err);
     dom.searchInput.disabled = false;
     dom.searchInput.value = "Roma, Lazio";
