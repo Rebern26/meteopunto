@@ -19,6 +19,8 @@
   --color-accent: #00a8e8;
   --color-danger: #e74c3c;
   --color-success: #2ecc71;
+  --color-card: #ffffff;
+  --color-border: rgba(0, 0, 0, 0.08);
   --nav-gradient: linear-gradient(
     135deg,
     #ffd700 0%,
@@ -471,123 +473,8 @@ input {
   font-size: 2.5rem;
   opacity: 0.6;
 }
-.map-placeholder {
-  height: 300px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-md);
-  color: var(--color-text-muted);
-  font-size: 0.95rem;
-  border: 2px dashed var(--border-color);
-  background: transparent;
-  box-shadow: none;
-}
 
-/* ─── 7. STATO VUOTO HERO ───────────────────────────────── */
-.empty-hero-section {
-  background: transparent !important;
-}
-.empty-hero-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: var(--space-2xl) var(--space-lg);
-  gap: var(--space-md);
-}
-.empty-hero-icon {
-  font-size: 4rem;
-  opacity: 0.3;
-}
-.empty-hero-title {
-  font-family: var(--font-display);
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--color-text-muted);
-}
-.empty-hero-sub {
-  font-size: 0.9rem;
-  color: var(--color-text-muted);
-  max-width: 400px;
-}
-
-/* ─── 8. TAB 16 GIORNI ──────────────────────────────────── */
-.day-tabs-wrapper {
-  margin-bottom: var(--space-lg);
-}
-.day-tabs-scroll {
-  overflow-x: auto;
-  padding-bottom: 4px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-sky-light) transparent;
-  -webkit-overflow-scrolling: touch;
-}
-.day-tabs-scroll::-webkit-scrollbar {
-  height: 4px;
-}
-.day-tabs-scroll::-webkit-scrollbar-thumb {
-  background: var(--color-sky-light);
-  border-radius: 4px;
-}
-.day-tabs {
-  display: flex;
-  gap: var(--space-sm);
-  min-width: max-content;
-}
-.day-tab {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 10px 16px;
-  border-radius: var(--radius-md);
-  border: 2px solid transparent;
-  background: var(--color-bg-card);
-  box-shadow: var(--shadow-sm);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  min-width: 72px;
-  gap: 2px;
-}
-.day-tab:hover {
-  border-color: var(--color-sky-light);
-  background: var(--color-sky-light);
-}
-.day-tab.active {
-  border-color: var(--color-sky);
-  background: var(--color-sky);
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(0, 168, 232, 0.3);
-}
-.day-tab-name {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  opacity: 0.75;
-}
-.day-tab.active .day-tab-name {
-  opacity: 0.9;
-}
-.day-tab-date {
-  font-size: 1rem;
-  font-weight: 700;
-}
-.day-tab-icon {
-  font-size: 1.1rem;
-  margin-top: 2px;
-}
-.day-tab-temp {
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--color-text-muted);
-}
-.day-tab.active .day-tab-temp {
-  color: rgba(255, 255, 255, 0.85);
-}
-
-/* ─── 9. SCHEDA LIVE ────────────────────────────────────── */
+/* ─── 7. SCHEDA LIVE ────────────────────────────────────── */
 .live-weather-card {
   background: #ffffff;
   border-radius: var(--radius-lg);
@@ -613,8 +500,6 @@ input {
   color: var(--color-text-muted);
   padding: 0;
 }
-
-/* Layout interno scheda live */
 .lw-layout {
   display: flex;
   flex-wrap: wrap;
@@ -707,8 +592,6 @@ input {
   font-size: 0.78rem;
   color: var(--color-text-muted);
 }
-
-/* Griglia stats — sfondo grigio chiaro */
 .lw-stats {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -740,7 +623,81 @@ input {
   color: var(--color-text-primary);
 }
 
-/* ─── 10. TIMELINE ORA PER ORA ──────────────────────────── */
+/* ─── 8. TAB 16 GIORNI ──────────────────────────────────── */
+.day-tabs-wrapper {
+  margin-bottom: var(--space-lg);
+}
+.day-tabs-scroll {
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-sky-light) transparent;
+  -webkit-overflow-scrolling: touch;
+}
+.day-tabs-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.day-tabs-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-sky-light);
+  border-radius: 4px;
+}
+.day-tabs {
+  display: flex;
+  gap: var(--space-sm);
+  min-width: max-content;
+}
+.day-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 16px;
+  border-radius: var(--radius-md);
+  border: 2px solid transparent;
+  background: var(--color-bg-card);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-width: 72px;
+  gap: 2px;
+}
+.day-tab:hover {
+  border-color: var(--color-sky-light);
+  background: var(--color-sky-light);
+}
+.day-tab.active {
+  border-color: var(--color-sky);
+  background: var(--color-sky);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 168, 232, 0.3);
+}
+.day-tab-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+}
+.day-tab.active .day-tab-name {
+  opacity: 0.9;
+}
+.day-tab-date {
+  font-size: 1rem;
+  font-weight: 700;
+}
+.day-tab-icon {
+  font-size: 1.1rem;
+  margin-top: 2px;
+}
+.day-tab-temp {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+.day-tab.active .day-tab-temp {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ─── 9. TIMELINE ORA PER ORA ───────────────────────────── */
 .hourly-section {
   margin-bottom: var(--space-xl);
 }
@@ -753,7 +710,6 @@ input {
   font-weight: 700;
   color: var(--color-text-primary);
 }
-
 #giorno-selezionato-testo {
   font-size: 0.85rem;
   font-weight: 600;
@@ -781,8 +737,6 @@ input {
   min-width: max-content;
   padding: 4px 2px 6px;
 }
-
-/* Card singola ora */
 .hc-card {
   display: flex;
   flex-direction: column;
@@ -803,8 +757,6 @@ input {
   box-shadow: var(--shadow-md);
   transform: translateY(-2px);
 }
-
-/* Card ora corrente */
 .hc-card.hc-now {
   border-color: var(--color-sky);
   background: var(--color-sky-light);
@@ -854,20 +806,7 @@ input {
   gap: 2px;
 }
 
-/* Linea temporale sotto le card */
-.hourly-timeline-line {
-  height: 3px;
-  background: linear-gradient(
-    90deg,
-    var(--color-sky-light) 0%,
-    var(--color-sky) 50%,
-    var(--color-sky-light) 100%
-  );
-  border-radius: 2px;
-  margin: 0 2px 12px;
-}
-
-/* ─── 11. SERVICE SUB-TABS ──────────────────────────────── */
+/* ─── 10. SERVICE TABS ──────────────────────────────────── */
 .service-tabs-bar {
   display: flex;
   gap: var(--space-sm);
@@ -902,7 +841,7 @@ input {
   background: var(--color-bg-card);
 }
 
-/* ─── 12. SERVICE PANEL ─────────────────────────────────── */
+/* ─── 11. SERVICE PANEL ─────────────────────────────────── */
 .service-panel {
   background: var(--color-bg-card);
   border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md);
@@ -997,7 +936,7 @@ input {
   transition: transform 0.4s ease;
 }
 
-/* ─── 13. SKELETON ──────────────────────────────────────── */
+/* ─── 12. SKELETON ──────────────────────────────────────── */
 @keyframes skeleton-shimmer {
   0% {
     background-position: -400px 0;
@@ -1013,7 +952,7 @@ input {
   border-radius: var(--radius-md);
 }
 
-/* ─── 14. FOOTER ────────────────────────────────────────── */
+/* ─── 13. FOOTER ────────────────────────────────────────── */
 .site-footer {
   background: #1e2b38;
   color: rgba(255, 255, 255, 0.75);
@@ -1064,7 +1003,7 @@ input {
   text-align: center;
 }
 
-/* ─── 15. RESPONSIVE ────────────────────────────────────── */
+/* ─── 14. RESPONSIVE ────────────────────────────────────── */
 @media (max-width: 1024px) {
   .nav-links {
     display: none;
@@ -1131,4 +1070,137 @@ input {
 :focus-visible {
   outline: 2px solid var(--color-sky);
   outline-offset: 3px;
+}
+
+/* ═══════════════════════════════════════
+   MAPPA INTERATTIVA
+═══════════════════════════════════════ */
+.map-section-wrap {
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  background: var(--color-card);
+}
+
+#italia-map {
+  width: 100%;
+  height: 480px;
+}
+
+.map-timeline {
+  display: flex;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--color-bg-card);
+  border-top: 1px solid var(--border-color);
+  flex-wrap: wrap;
+}
+
+.map-day-btn {
+  flex: 1;
+  min-width: 80px;
+  padding: 10px 16px;
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.map-day-btn:hover {
+  border-color: var(--color-sky);
+  color: var(--color-sky);
+}
+
+.map-day-btn.active {
+  background: var(--color-sky);
+  border-color: var(--color-sky);
+  color: #fff;
+  font-weight: 700;
+}
+
+/* Marker capoluoghi */
+.city-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.city-marker-bubble {
+  background: white;
+  border: 2px solid #1a73c8;
+  border-radius: 20px;
+  padding: 3px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #1a1a2e;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.city-marker-bubble:hover {
+  transform: scale(1.08);
+}
+.city-marker-bubble.cond-rain {
+  border-color: #3498db;
+  background: #ebf5fb;
+}
+.city-marker-bubble.cond-cloud {
+  border-color: #95a5a6;
+  background: #f2f3f4;
+}
+.city-marker-bubble.cond-storm {
+  border-color: #8e44ad;
+  background: #f5eef8;
+}
+.city-marker-bubble.cond-clear {
+  border-color: #f57c00;
+  background: #fff8f0;
+}
+.city-marker-bubble.cond-snow {
+  border-color: #85c1e9;
+  background: #eaf4fb;
+}
+
+.city-marker-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #1a73c8;
+  margin: 0 auto;
+}
+
+/* Loading overlay mappa */
+.map-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-md);
+  padding: 12px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-sky);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  #italia-map {
+    height: 320px;
+  }
+  .map-day-btn {
+    font-size: 0.78rem;
+    padding: 8px 10px;
+  }
 }

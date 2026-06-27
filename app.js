@@ -7,9 +7,6 @@
 
 "use strict";
 
-/* ═══════════════════════════════════════
-   CONFIGURAZIONE
-═══════════════════════════════════════ */
 const CONFIG = {
   GEO_URL: "https://geocoding-api.open-meteo.com/v1/search",
   METEO_URL: "https://api.open-meteo.com/v1/forecast",
@@ -21,9 +18,6 @@ const CONFIG = {
   LANGUAGE: "it",
 };
 
-/* ═══════════════════════════════════════
-   STATO GLOBALE
-═══════════════════════════════════════ */
 const state = {
   selectedLocation: null,
   weatherData: null,
@@ -34,9 +28,6 @@ const state = {
   abortController: null,
 };
 
-/* ═══════════════════════════════════════
-   DOM REFS
-═══════════════════════════════════════ */
 const dom = {
   searchInput: document.getElementById("city-search"),
   autocompleteList: document.getElementById("autocomplete-list"),
@@ -52,9 +43,6 @@ const dom = {
   tagButtons: document.querySelectorAll(".tag-btn"),
 };
 
-/* ═══════════════════════════════════════
-   UTILITY
-═══════════════════════════════════════ */
 function debounce(fn, wait) {
   let t;
   return function (...args) {
@@ -129,10 +117,6 @@ function highlightMatch(text, query) {
   return escaped.replace(re, "<mark>$1</mark>");
 }
 
-/**
- * Converte il WMO weather code in {label, icon}
- * Mappatura severa e completa.
- */
 function wmoToCondition(code) {
   const map = {
     0: { label: "Cielo sereno", icon: "☀️" },
@@ -167,10 +151,6 @@ function wmoToCondition(code) {
   return map[code] ?? { label: "N/D", icon: "❓" };
 }
 
-/**
- * Nowcasting: sovrascrive la condizione con dati live
- * se la copertura nuvolosa o la precipitazione lo richiedono.
- */
 function applyNowcasting(currentData, hourlyCondit) {
   if (!currentData) return hourlyCondit;
   const precip = currentData.precipitation ?? 0;
@@ -182,9 +162,6 @@ function applyNowcasting(currentData, hourlyCondit) {
   return hourlyCondit;
 }
 
-/* ═══════════════════════════════════════
-   API – GEOCODING
-═══════════════════════════════════════ */
 async function fetchLocations(query) {
   if (state.abortController) state.abortController.abort();
   state.abortController = new AbortController();
@@ -209,9 +186,6 @@ async function fetchLocations(query) {
   }
 }
 
-/* ═══════════════════════════════════════
-   API – METEO 16 GIORNI
-═══════════════════════════════════════ */
 async function fetchWeather(loc) {
   const params = new URLSearchParams({
     latitude: loc.latitude,
@@ -256,9 +230,6 @@ async function fetchWeather(loc) {
   return res.json();
 }
 
-/* ═══════════════════════════════════════
-   API – MARINE
-═══════════════════════════════════════ */
 async function fetchMarine(loc) {
   const params = new URLSearchParams({
     latitude: loc.latitude,
@@ -278,9 +249,6 @@ async function fetchMarine(loc) {
   }
 }
 
-/* ═══════════════════════════════════════
-   CARICAMENTO PRINCIPALE
-═══════════════════════════════════════ */
 async function loadWeatherData(loc) {
   showLoadingState();
   try {
@@ -292,7 +260,6 @@ async function loadWeatherData(loc) {
     state.marineData = marine;
     state.selectedDayIdx = 0;
     state.activeService = "forecast";
-
     renderAll(weather, marine, loc, 0);
   } catch (err) {
     console.error("MeteoPunto – Errore:", err);
@@ -304,18 +271,12 @@ async function loadWeatherData(loc) {
   }
 }
 
-/* ═══════════════════════════════════════
-   RENDER PRINCIPALE
-═══════════════════════════════════════ */
 function renderAll(weather, marine, loc, dayIdx) {
   dom.forecastSection.hidden = false;
-
   renderDayTabs(weather, dayIdx);
   renderLiveWeather(weather, loc, dayIdx);
   renderHourlyTimeline(weather, dayIdx);
   renderServicePanel(weather, marine, dayIdx, state.activeService);
-
-  // Riattiva sub-tab
   dom.serviceTabs.forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.service === state.activeService);
     btn.setAttribute(
@@ -325,9 +286,6 @@ function renderAll(weather, marine, loc, dayIdx) {
   });
 }
 
-/* ═══════════════════════════════════════
-   RENDER – TAB 16 GIORNI
-═══════════════════════════════════════ */
 function renderDayTabs(weather, selectedIdx) {
   dom.dayTabs.innerHTML = "";
   weather.daily.time.forEach((dateStr, idx) => {
@@ -335,7 +293,6 @@ function renderDayTabs(weather, selectedIdx) {
     const cond = wmoToCondition(weather.daily.weathercode[idx]);
     const tMax = Math.round(weather.daily.temperature_2m_max[idx]);
     const tMin = Math.round(weather.daily.temperature_2m_min[idx]);
-
     const btn = document.createElement("button");
     btn.className = "day-tab" + (idx === selectedIdx ? " active" : "");
     btn.setAttribute("role", "tab");
@@ -346,15 +303,12 @@ function renderDayTabs(weather, selectedIdx) {
       ${date ? `<span class="day-tab-date">${date}</span>` : ""}
       <span class="day-tab-icon">${cond.icon}</span>
       <span class="day-tab-temp">${tMax}° / ${tMin}°</span>`;
-
     btn.addEventListener("click", () => {
       state.selectedDayIdx = idx;
       dom.dayTabs.querySelectorAll(".day-tab").forEach((b, i) => {
         b.classList.toggle("active", i === idx);
         b.setAttribute("aria-selected", i === idx);
       });
-
-      // Aggiorna testo dinamico sotto "Previsioni Ora per Ora"
       const giornoEl = document.getElementById("giorno-selezionato-testo");
       if (giornoEl) {
         if (idx === 0) {
@@ -362,7 +316,6 @@ function renderDayTabs(weather, selectedIdx) {
         } else if (idx === 1) {
           giornoEl.textContent = "📅 Domani";
         } else {
-          // Costruisce "Venerdì 26 Giugno" dalla data del giorno
           const dateStr = weather.daily.time[idx];
           const d = new Date(dateStr);
           const giorniEstesi = [
@@ -391,7 +344,6 @@ function renderDayTabs(weather, selectedIdx) {
           giornoEl.textContent = `📅 ${giorniEstesi[d.getDay()]} ${d.getDate()} ${mesiEstesi[d.getMonth()]}`;
         }
       }
-
       renderLiveWeather(state.weatherData, state.selectedLocation, idx);
       renderHourlyTimeline(state.weatherData, idx);
       renderServicePanel(
@@ -401,22 +353,15 @@ function renderDayTabs(weather, selectedIdx) {
         state.activeService,
       );
     });
-
     dom.dayTabs.appendChild(btn);
   });
 }
 
-/* ═══════════════════════════════════════
-   RENDER – SCHEDA LIVE
-   Per "Oggi" usa i dati current live di Open-Meteo.
-   Per i giorni futuri usa l'orario di mezzogiorno.
-═══════════════════════════════════════ */
 function renderLiveWeather(weather, loc, dayIdx) {
   const isToday = dayIdx === 0;
   const cur = weather.current;
   const cw = weather.current_weather;
   const sublabel = loc.region ? `${loc.region}, ${loc.country}` : loc.country;
-
   let temp,
     feelsLike,
     humidity,
@@ -426,9 +371,7 @@ function renderLiveWeather(weather, loc, dayIdx) {
     cloudCov,
     condLabel,
     condIcon;
-
   if (isToday && cur) {
-    // Dati in tempo reale
     temp = Math.round(cur.temperature_2m);
     feelsLike = Math.round(cur.apparent_temperature);
     humidity = Math.round(cur.relative_humidity_2m);
@@ -441,7 +384,6 @@ function renderLiveWeather(weather, loc, dayIdx) {
     condIcon = nowcasted.icon;
     condLabel = nowcasted.label;
   } else {
-    // Giorno futuro: usa le 12:00 del giorno selezionato
     const hIdx = dayIdx * 24 + 12;
     temp = Math.round(weather.hourly.temperature_2m[hIdx]);
     feelsLike = Math.round(weather.hourly.apparent_temperature[hIdx]);
@@ -454,26 +396,17 @@ function renderLiveWeather(weather, loc, dayIdx) {
     condIcon = c.icon;
     condLabel = c.label;
   }
-
-  // Badge LIVE solo per oggi
   const liveBadgeHTML = isToday
     ? `<div class="lw-badge"><span class="lw-badge-dot"></span>LIVE – Ora</div>`
     : `<div class="lw-badge" style="background:rgba(255,255,255,0.1)">📅 Previsione</div>`;
-
-  // Precipitazione
   const precipHTML =
     isToday && precip > 0
       ? `<p class="lw-precip">🌧️ Precipitazione: ${precip.toFixed(1)} mm</p>`
       : "";
-
-  // Nuvolosità
   const cloudHTML =
     cloudCov > 0 ? `<p class="lw-cloud">☁️ Nuvolosità: ${cloudCov}%</p>` : "";
-
-  // Tmax / Tmin del giorno
   const tMax = Math.round(weather.daily.temperature_2m_max[dayIdx]);
   const tMin = Math.round(weather.daily.temperature_2m_min[dayIdx]);
-
   dom.liveWeatherCard.innerHTML = `
     <div class="lw-layout">
       <div class="lw-main">
@@ -486,70 +419,41 @@ function renderLiveWeather(weather, loc, dayIdx) {
         </div>
         <p class="lw-cond">${condLabel}</p>
         <p class="lw-feels">Percepita: ${feelsLike}°C</p>
-        ${precipHTML}
-        ${cloudHTML}
+        ${precipHTML}${cloudHTML}
       </div>
       <div class="lw-stats">
-        <div class="lw-stat">
-          <span class="lw-stat-icon">💧</span>
-          <span class="lw-stat-label">Umidità</span>
-          <span class="lw-stat-value">${humidity}%</span>
-        </div>
-        <div class="lw-stat">
-          <span class="lw-stat-icon">💨</span>
-          <span class="lw-stat-label">Vento</span>
-          <span class="lw-stat-value">${windSpeed} km/h ${windDir}</span>
-        </div>
-        <div class="lw-stat">
-          <span class="lw-stat-icon">🌡️</span>
-          <span class="lw-stat-label">Max / Min</span>
-          <span class="lw-stat-value">${tMax}° / ${tMin}°</span>
-        </div>
-        <div class="lw-stat">
-          <span class="lw-stat-icon">☀️</span>
-          <span class="lw-stat-label">UV Max</span>
-          <span class="lw-stat-value">${weather.daily.uv_index_max[dayIdx]}</span>
-        </div>
+        <div class="lw-stat"><span class="lw-stat-icon">💧</span><span class="lw-stat-label">Umidità</span><span class="lw-stat-value">${humidity}%</span></div>
+        <div class="lw-stat"><span class="lw-stat-icon">💨</span><span class="lw-stat-label">Vento</span><span class="lw-stat-value">${windSpeed} km/h ${windDir}</span></div>
+        <div class="lw-stat"><span class="lw-stat-icon">🌡️</span><span class="lw-stat-label">Max / Min</span><span class="lw-stat-value">${tMax}° / ${tMin}°</span></div>
+        <div class="lw-stat"><span class="lw-stat-icon">☀️</span><span class="lw-stat-label">UV Max</span><span class="lw-stat-value">${weather.daily.uv_index_max[dayIdx]}</span></div>
       </div>
     </div>`;
 }
 
-/* ═══════════════════════════════════════
-   RENDER – TIMELINE ORA PER ORA
-   24 card consecutive per il giorno selezionato.
-   Scroll automatico all'ora corrente per "Oggi".
-═══════════════════════════════════════ */
 function renderHourlyTimeline(weather, dayIdx) {
   const container = dom.hourlyContainer;
   if (!container) return;
   container.innerHTML = "";
-
   const isToday = dayIdx === 0;
   const nowHour = new Date().getHours();
   const baseIdx = dayIdx * 24;
   const precipProb = weather.hourly.precipitation_probability || [];
-
   for (let h = 0; h < 24; h++) {
     const idx = baseIdx + h;
     const cond = wmoToCondition(weather.hourly.weathercode[idx]);
     const temp = Math.round(weather.hourly.temperature_2m[idx]);
     const prob = precipProb[idx] ?? 0;
     const isNow = isToday && h === nowHour;
-
     const card = document.createElement("div");
     card.className = "hc-card" + (isNow ? " hc-now" : "");
-
     card.innerHTML = `
       ${isNow ? '<span class="hc-now-badge">ORA</span>' : ""}
       <span class="hc-hour">${String(h).padStart(2, "0")}:00</span>
       <span class="hc-icon" aria-hidden="true">${cond.icon}</span>
       <span class="hc-temp">${temp}°</span>
       ${prob > 0 ? `<span class="hc-precip">💧 ${prob}%</span>` : ""}`;
-
     container.appendChild(card);
   }
-
-  // Scrolla all'ora corrente
   if (isToday) {
     setTimeout(() => {
       const nowCard = container.querySelector(".hc-now");
@@ -563,9 +467,6 @@ function renderHourlyTimeline(weather, dayIdx) {
   }
 }
 
-/* ═══════════════════════════════════════
-   RENDER – SERVICE PANEL
-═══════════════════════════════════════ */
 function renderServicePanel(weather, marine, dayIdx, service) {
   switch (service) {
     case "forecast":
@@ -583,7 +484,6 @@ function renderServicePanel(weather, marine, dayIdx, service) {
   }
 }
 
-// Etichette fascia per i sub-tab (solo descrittive, non guidano la logica)
 const FASCE_LABEL = [
   { label: "NOTTE", icon: "🌙", midHour: 3 },
   { label: "MATTINA", icon: "🌅", midHour: 9 },
@@ -591,7 +491,6 @@ const FASCE_LABEL = [
   { label: "SERA", icon: "🌆", midHour: 21 },
 ];
 
-/* ── TAB 1: PREVISIONI ── */
 function renderServiceForecast(weather, dayIdx) {
   const cols = FASCE_LABEL.map((f) => {
     const hIdx = dayIdx * 24 + f.midHour;
@@ -600,21 +499,13 @@ function renderServiceForecast(weather, dayIdx) {
     return `
       <div class="sp-col">
         <div class="sp-col-header">${f.icon} ${f.label} <span style="font-weight:400;margin-left:auto">${String(f.midHour).padStart(2, "0")}:00</span></div>
-        <div class="sp-row">
-          <span class="sp-label">Condizioni</span>
-          <span style="font-size:2rem;line-height:1.2">${cond.icon}</span>
-          <span class="sp-value" style="font-size:0.9rem">${cond.label}</span>
-        </div>
-        <div class="sp-row">
-          <span class="sp-label">Umidità</span>
-          <span class="sp-value">${humidity}%</span>
-        </div>
+        <div class="sp-row"><span class="sp-label">Condizioni</span><span style="font-size:2rem;line-height:1.2">${cond.icon}</span><span class="sp-value" style="font-size:0.9rem">${cond.label}</span></div>
+        <div class="sp-row"><span class="sp-label">Umidità</span><span class="sp-value">${humidity}%</span></div>
       </div>`;
   }).join("");
   dom.servicePanel.innerHTML = `<div class="sp-grid">${cols}</div>`;
 }
 
-/* ── TAB 2: TEMPERATURE ── */
 function renderServiceTemperature(weather, dayIdx) {
   const cols = FASCE_LABEL.map((f) => {
     const hIdx = dayIdx * 24 + f.midHour;
@@ -630,21 +521,13 @@ function renderServiceTemperature(weather, dayIdx) {
     return `
       <div class="sp-col">
         <div class="sp-col-header">${f.icon} ${f.label}</div>
-        <div class="sp-row">
-          <span class="sp-label">Temperatura reale</span>
-          <span class="sp-value" style="font-size:1.8rem">${temp}°C</span>
-        </div>
-        <div class="sp-row">
-          <span class="sp-label">Percepita</span>
-          <span class="sp-value">${feels}°C</span>
-          <span class="sp-sub">${diffStr}</span>
-        </div>
+        <div class="sp-row"><span class="sp-label">Temperatura reale</span><span class="sp-value" style="font-size:1.8rem">${temp}°C</span></div>
+        <div class="sp-row"><span class="sp-label">Percepita</span><span class="sp-value">${feels}°C</span><span class="sp-sub">${diffStr}</span></div>
       </div>`;
   }).join("");
   dom.servicePanel.innerHTML = `<div class="sp-grid">${cols}</div>`;
 }
 
-/* ── TAB 3: MARI E VENTO ── */
 function renderServiceWindSea(weather, marine, dayIdx) {
   const windCols = FASCE_LABEL.map((f) => {
     const hIdx = dayIdx * 24 + f.midHour;
@@ -680,21 +563,11 @@ function renderServiceWindSea(weather, marine, dayIdx) {
     return `
       <div class="sp-col">
         <div class="sp-col-header">${f.icon} ${f.label}</div>
-        <div class="sp-row">
-          <span class="sp-label">Velocità</span>
-          <span class="sp-value" style="font-size:1.4rem">${speed} km/h</span>
-        </div>
-        <div class="sp-row">
-          <span class="sp-label">Direzione</span>
-          <span class="sp-value"><span class="wind-arrow" style="transform:rotate(${deg}deg)">↑</span> ${dir}</span>
-        </div>
-        <div class="sp-row">
-          <span class="sp-label">Forza Beaufort</span>
-          <span class="sp-value">BF ${bf}</span>
-        </div>
+        <div class="sp-row"><span class="sp-label">Velocità</span><span class="sp-value" style="font-size:1.4rem">${speed} km/h</span></div>
+        <div class="sp-row"><span class="sp-label">Direzione</span><span class="sp-value"><span class="wind-arrow" style="transform:rotate(${deg}deg)">↑</span> ${dir}</span></div>
+        <div class="sp-row"><span class="sp-label">Forza Beaufort</span><span class="sp-value">BF ${bf}</span></div>
       </div>`;
   }).join("");
-
   let marineHTML = !marine
     ? `<div class="sea-unavailable">🏔️ <span>Dati marittimi non disponibili per questa località.</span></div>`
     : (() => {
@@ -715,14 +588,11 @@ function renderServiceWindSea(weather, marine, dayIdx) {
         }).join("");
         return `<h3 style="font-size:0.85rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-sky);margin:var(--space-lg) 0 var(--space-md)">🌊 Condizioni del mare</h3><div class="sp-grid">${seaCols}</div>`;
       })();
-
   dom.servicePanel.innerHTML = `
     <h3 style="font-size:0.85rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--color-sky);margin-bottom:var(--space-md)">💨 Vento</h3>
-    <div class="sp-grid">${windCols}</div>
-    ${marineHTML}`;
+    <div class="sp-grid">${windCols}</div>${marineHTML}`;
 }
 
-/* ── TAB 4: UV ── */
 function renderServiceUV(weather, dayIdx) {
   const cols = FASCE_LABEL.map((f) => {
     const hIdx = dayIdx * 24 + f.midHour;
@@ -739,19 +609,8 @@ function renderServiceUV(weather, dayIdx) {
           <span class="sp-value" style="font-size:2rem;color:${meta.color}">${isNight ? "–" : uvR}</span>
           ${!isNight ? `<span class="uv-badge" style="background:${meta.color}">${meta.label}</span>` : '<span class="sp-sub">Nessuna radiazione</span>'}
         </div>
-        ${
-          !isNight
-            ? `
-        <div class="sp-row">
-          <span class="sp-label">Intensità</span>
-          <div class="uv-bar-wrap"><div class="uv-bar" style="width:${pct}%;background:${meta.color}"></div></div>
-        </div>`
-            : ""
-        }
-        <div class="sp-row">
-          <span class="sp-label">Consiglio</span>
-          <span class="sp-sub">${uvAdvice(uvR, isNight)}</span>
-        </div>
+        ${!isNight ? `<div class="sp-row"><span class="sp-label">Intensità</span><div class="uv-bar-wrap"><div class="uv-bar" style="width:${pct}%;background:${meta.color}"></div></div></div>` : ""}
+        <div class="sp-row"><span class="sp-label">Consiglio</span><span class="sp-sub">${uvAdvice(uvR, isNight)}</span></div>
       </div>`;
   }).join("");
   dom.servicePanel.innerHTML = `<div class="sp-grid">${cols}</div>`;
@@ -766,9 +625,6 @@ function uvAdvice(idx, isNight) {
   return "Evita esposizione diretta";
 }
 
-/* ═══════════════════════════════════════
-   UI – STATI
-═══════════════════════════════════════ */
 function showLoadingState() {
   dom.forecastSection.hidden = false;
   dom.liveWeatherCard.innerHTML = `
@@ -780,9 +636,6 @@ function showLoadingState() {
   dom.servicePanel.innerHTML = "";
 }
 
-/* ═══════════════════════════════════════
-   UI – AUTOCOMPLETE
-═══════════════════════════════════════ */
 function showAutocompleteLoading() {
   dom.autocompleteList.innerHTML = `<li class="autocomplete-loading"><span class="ac-spinner"></span>Ricerca in corso…</li>`;
   dom.autocompleteList.hidden = false;
@@ -858,9 +711,6 @@ function selectLocation(result) {
   loadWeatherData(state.selectedLocation);
 }
 
-/* ═══════════════════════════════════════
-   CSS DINAMICI AUTOCOMPLETE
-═══════════════════════════════════════ */
 function injectAutocompleteCSS() {
   if (document.getElementById("ac-css")) return;
   const s = document.createElement("style");
@@ -876,9 +726,6 @@ function injectAutocompleteCSS() {
   document.head.appendChild(s);
 }
 
-/* ═══════════════════════════════════════
-   EVENT LISTENERS
-═══════════════════════════════════════ */
 const handleSearchInput = debounce(async function () {
   const q = dom.searchInput.value.trim();
   if (q.length < CONFIG.MIN_CHARS) {
@@ -908,7 +755,6 @@ dom.searchBtn.addEventListener("click", () => {
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".search-wrapper")) closeAutocomplete();
 });
-
 dom.serviceTabs.forEach((btn) => {
   btn.addEventListener("click", function () {
     state.activeService = this.dataset.service;
@@ -924,7 +770,6 @@ dom.serviceTabs.forEach((btn) => {
     );
   });
 });
-
 dom.tagButtons.forEach((btn) => {
   btn.addEventListener("click", async function () {
     dom.searchInput.value = this.dataset.city;
@@ -932,7 +777,6 @@ dom.tagButtons.forEach((btn) => {
     if (results && results.length > 0) selectLocation(results[0]);
   });
 });
-
 dom.hamburger.addEventListener("click", function () {
   state.menuOpen = !state.menuOpen;
   this.classList.toggle("open", state.menuOpen);
@@ -951,24 +795,11 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
 });
 
 /* ═══════════════════════════════════════
-   INIT – Geolocalizzazione automatica via Cloudflare
-   1. Chiama /api/geolocate (nessun permesso browser)
-   2. Cloudflare legge l'IP e restituisce lat/lon/città
-   3. Se fallisce → fallback Roma
+   INIT
 ═══════════════════════════════════════ */
 (async function init() {
   injectAutocompleteCSS();
 
-  console.log(
-    "%c🌤️ MeteoPunto.com – Geolocalizzazione IP attiva\n" +
-      "%c📡 Scheda Live + Timeline 24h + 16 giorni\n" +
-      "%c⚡ Nowcasting: cloud_cover + precipitation live",
-    "color:#FFD700;font-weight:700;font-size:14px;",
-    "color:#00A8E8;font-weight:500;",
-    "color:#2ECC71;font-weight:500;",
-  );
-
-  // Fallback Roma se tutto fallisce
   const romaDefault = {
     name: "Roma",
     region: "Lazio",
@@ -979,41 +810,30 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
     timezone: "Europe/Rome",
   };
 
-  // Determina se siamo in sviluppo locale o produzione
   const isLocal =
     window.location.hostname === "127.0.0.1" ||
     window.location.hostname === "localhost";
 
   if (isLocal) {
-    // In sviluppo locale Cloudflare non è disponibile → usa Roma
-    console.log(
-      "%c🏠 Sviluppo locale → uso Roma come default",
-      "color:#FF8C00;font-weight:500;",
-    );
     dom.searchInput.value = "Roma, Lazio";
     state.selectedLocation = romaDefault;
     loadWeatherData(romaDefault);
     return;
   }
 
-  // In produzione: chiama il Worker per rilevare la posizione dall'IP
   try {
     dom.searchInput.value = "📍 Rilevamento posizione…";
     dom.searchInput.disabled = true;
-
     const res = await fetch(
       "https://meteopunto-worker.hentzeldieter.workers.dev/api/geolocate",
     );
     const data = await res.json();
-
     dom.searchInput.disabled = false;
 
     if (data.success && data.latitude && data.longitude) {
-      // Ottieni nome città in italiano via Nominatim
       let cityName = "La tua posizione";
       let region = "";
       let country = "";
-
       try {
         const nomRes = await fetch(
           `https://nominatim.openstreetmap.org/reverse?lat=${data.latitude}&lon=${data.longitude}&format=json&accept-language=it`,
@@ -1031,7 +851,6 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
         cityName = data.city || "La tua posizione";
         country = data.country || "";
       }
-
       const location = {
         name: cityName,
         region,
@@ -1041,7 +860,6 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
         elevation: null,
         timezone: data.timezone || "Europe/Rome",
       };
-
       dom.searchInput.value = cityName;
       state.selectedLocation = location;
       loadWeatherData(location);
@@ -1058,3 +876,149 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
     loadWeatherData(romaDefault);
   }
 })();
+
+/* ═══════════════════════════════════════
+   MAPPA INTERATTIVA – 20 CAPOLUOGHI
+═══════════════════════════════════════ */
+const CAPOLUOGHI = [
+  { name: "Roma", lat: 41.8919, lon: 12.5113 },
+  { name: "Milano", lat: 45.4654, lon: 9.1859 },
+  { name: "Napoli", lat: 40.8518, lon: 14.2681 },
+  { name: "Torino", lat: 45.0703, lon: 7.6869 },
+  { name: "Palermo", lat: 38.1157, lon: 13.3615 },
+  { name: "Genova", lat: 44.4056, lon: 8.9463 },
+  { name: "Bologna", lat: 44.4949, lon: 11.3426 },
+  { name: "Firenze", lat: 43.7696, lon: 11.2558 },
+  { name: "Bari", lat: 41.1171, lon: 16.8719 },
+  { name: "Catania", lat: 37.5079, lon: 15.083 },
+  { name: "Venezia", lat: 45.4408, lon: 12.3155 },
+  { name: "Verona", lat: 45.4384, lon: 10.9916 },
+  { name: "Trieste", lat: 45.6495, lon: 13.7768 },
+  { name: "Trento", lat: 46.0748, lon: 11.1217 },
+  { name: "Ancona", lat: 43.6158, lon: 13.5189 },
+  { name: "Perugia", lat: 43.1107, lon: 12.3908 },
+  { name: "L'Aquila", lat: 42.3498, lon: 13.3995 },
+  { name: "Potenza", lat: 40.6402, lon: 15.8057 },
+  { name: "Catanzaro", lat: 38.9098, lon: 16.5872 },
+  { name: "Cagliari", lat: 39.2238, lon: 9.1217 },
+];
+
+function wmoToMapClass(code) {
+  if ([0, 1].includes(code)) return "cond-clear";
+  if ([2, 3, 45, 48].includes(code)) return "cond-cloud";
+  if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code))
+    return "cond-rain";
+  if ([71, 73, 75, 77, 85, 86].includes(code)) return "cond-snow";
+  if ([95, 96, 99].includes(code)) return "cond-storm";
+  return "cond-cloud";
+}
+
+let italiaMap = null;
+let mapMarkers = [];
+
+async function fetchCapoluogoDay(cap, dayIdx) {
+  const params = new URLSearchParams({
+    latitude: cap.lat,
+    longitude: cap.lon,
+    daily: "weathercode,temperature_2m_max",
+    timezone: "Europe/Rome",
+    forecast_days: 4,
+  });
+  try {
+    const res = await fetch(`${CONFIG.METEO_URL}?${params}`);
+    const data = await res.json();
+    return {
+      temp: Math.round(data.daily.temperature_2m_max[dayIdx]),
+      code: data.daily.weathercode[dayIdx],
+    };
+  } catch {
+    return { temp: "--", code: 0 };
+  }
+}
+
+function createMarker(cap, temp, code) {
+  const cond = wmoToCondition(code);
+  const cls = wmoToMapClass(code);
+  const icon = L.divIcon({
+    className: "",
+    html: `<div class="city-marker">
+      <div class="city-marker-bubble ${cls}">
+        <span>${cond.icon}</span>
+        <span>${cap.name} ${temp}°</span>
+      </div>
+      <div class="city-marker-dot"></div>
+    </div>`,
+    iconAnchor: [0, 0],
+  });
+  const marker = L.marker([cap.lat, cap.lon], { icon });
+  marker.on("click", () => {
+    dom.searchInput.value = cap.name;
+    dom.searchInput.scrollIntoView({ behavior: "smooth" });
+    fetchLocations(cap.name).then((results) => {
+      if (results && results.length > 0) selectLocation(results[0]);
+    });
+  });
+  return marker;
+}
+
+async function updateMapMarkers(dayIdx) {
+  mapMarkers.forEach((m) => italiaMap.removeLayer(m));
+  mapMarkers = [];
+  const results = await Promise.all(
+    CAPOLUOGHI.map((cap) => fetchCapoluogoDay(cap, dayIdx)),
+  );
+  CAPOLUOGHI.forEach((cap, i) => {
+    const { temp, code } = results[i];
+    const marker = createMarker(cap, temp, code);
+    marker.addTo(italiaMap);
+    mapMarkers.push(marker);
+  });
+}
+
+function initMap() {
+  if (italiaMap) return;
+  if (typeof L === "undefined") return;
+
+  italiaMap = L.map("italia-map", {
+    center: [42.5, 12.5],
+    zoom: 5,
+    scrollWheelZoom: false,
+    zoomControl: true,
+  });
+
+  L.tileLayer(
+    "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+    {
+      attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+      subdomains: "abcd",
+      maxZoom: 10,
+      minZoom: 4,
+    },
+  ).addTo(italiaMap);
+
+  updateMapMarkers(0);
+
+  document.querySelectorAll(".map-day-btn").forEach((btn) => {
+    btn.addEventListener("click", function () {
+      document
+        .querySelectorAll(".map-day-btn")
+        .forEach((b) => b.classList.remove("active"));
+      this.classList.add("active");
+      updateMapMarkers(parseInt(this.dataset.day));
+    });
+  });
+}
+
+// Inizializza la mappa quando diventa visibile
+const mapObserver = new IntersectionObserver(
+  (entries) => {
+    if (entries[0].isIntersecting) {
+      initMap();
+      mapObserver.disconnect();
+    }
+  },
+  { threshold: 0.1 },
+);
+
+const mapEl = document.getElementById("italia-map");
+if (mapEl) mapObserver.observe(mapEl);

@@ -17,6 +17,10 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;700&display=swap"
       rel="stylesheet"
     />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
@@ -136,9 +140,6 @@
 
     <!-- MAIN DASHBOARD -->
     <main id="main-content" class="dashboard" aria-label="Dashboard meteo">
-      <!-- ═══════════════════════════════════════
-         SEZIONE PREVISIONI PRINCIPALE
-    ═══════════════════════════════════════ -->
       <section
         class="dashboard-section forecast-section"
         id="forecast-section"
@@ -146,7 +147,6 @@
         hidden
       >
         <div class="section-container">
-          <!-- ═══ SCHEDA LIVE – METEO IN TEMPO REALE ═══ -->
           <div
             class="live-weather-card"
             id="live-weather-card"
@@ -159,7 +159,6 @@
             </div>
           </div>
 
-          <!-- TITOLO 16 GIORNI -->
           <h2
             id="forecast-heading"
             class="section-title"
@@ -169,7 +168,6 @@
             Dettagliate
           </h2>
 
-          <!-- TAB GIORNI (16 giorni) -->
           <div
             class="day-tabs-wrapper"
             role="region"
@@ -185,7 +183,6 @@
             </div>
           </div>
 
-          <!-- ═══ TIMELINE ORA PER ORA ═══ -->
           <div class="hourly-section" id="hourly-section">
             <div class="hourly-section-header">
               <span class="section-eyebrow">Dettaglio completo</span>
@@ -198,13 +195,10 @@
               aria-label="Timeline oraria"
               tabindex="0"
             >
-              <div id="hourly-container" class="hourly-container">
-                <!-- Popolato da app.js -->
-              </div>
+              <div id="hourly-container" class="hourly-container"></div>
             </div>
           </div>
 
-          <!-- SUB-TAB SERVIZI -->
           <div
             class="service-tabs-bar"
             role="tablist"
@@ -248,7 +242,6 @@
             </button>
           </div>
 
-          <!-- PANNELLO DATI SERVIZIO ATTIVO -->
           <div
             class="service-panel"
             id="service-panel"
@@ -265,14 +258,14 @@
             <span class="section-eyebrow">Vista geografica</span>Mappa Meteo
             Italia
           </h2>
-          <div
-            class="map-placeholder card"
-            id="map-panel"
-            role="img"
-            aria-label="Mappa meteorologica"
-          >
-            <span class="empty-icon" aria-hidden="true">🗺️</span>
-            <p>Mappa interattiva – disponibile nella prossima fase</p>
+          <div class="map-section-wrap">
+            <div id="italia-map"></div>
+            <div class="map-timeline">
+              <button class="map-day-btn active" data-day="0">Oggi</button>
+              <button class="map-day-btn" data-day="1">Domani</button>
+              <button class="map-day-btn" data-day="2">+2 Giorni</button>
+              <button class="map-day-btn" data-day="3">+3 Giorni</button>
+            </div>
           </div>
         </div>
       </section>
@@ -301,6 +294,7 @@
     </footer>
 
     <a href="#main-content" class="skip-link">Salta al contenuto principale</a>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="app.js" defer></script>
   </body>
 </html>
