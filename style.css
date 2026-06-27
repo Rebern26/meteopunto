@@ -1204,3 +1204,37 @@ input {
     padding: 8px 10px;
   }
 }
+
+/* ─── LEGENDA MAPPA ─────────────────────────────────────── */
+.map-legend {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: var(--color-bg-card);
+  border-top: 1px solid var(--border-color);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.map-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.map-legend-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.map-legend-snow {
+  font-size: 20px;
+  color: #5dade2;
+  line-height: 1;
+}

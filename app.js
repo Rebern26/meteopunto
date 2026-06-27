@@ -879,6 +879,7 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
 
 /* ═══════════════════════════════════════
    MAPPA INTERATTIVA – 20 CAPOLUOGHI
+   + RainViewer layer live
 ═══════════════════════════════════════ */
 const CAPOLUOGHI = [
   { name: "Roma", lat: 41.8919, lon: 12.5113 },
@@ -903,18 +904,28 @@ const CAPOLUOGHI = [
   { name: "Cagliari", lat: 39.2238, lon: 9.1217 },
 ];
 
-function wmoToMapClass(code) {
-  if ([0, 1].includes(code)) return "cond-clear";
-  if ([2, 3, 45, 48].includes(code)) return "cond-cloud";
+// Colori per condizione meteo
+const COND_COLORS = {
+  clear: { bg: "#FFF3CD", border: "#F57C00", dot: "#F57C00" }, // giallo
+  cloud: { bg: "#ECEFF1", border: "#78909C", dot: "#78909C" }, // grigio medio
+  rain: { bg: "#E3F2FD", border: "#1565C0", dot: "#1565C0" }, // blu
+  storm: { bg: "#F3E5F5", border: "#6A1B9A", dot: "#6A1B9A" }, // viola
+  snow: { bg: "#E8F4FD", border: "#5DADE2", dot: "#5DADE2" }, // azzurro
+};
+
+function wmoToCondKey(code) {
+  if ([0, 1].includes(code)) return "clear";
+  if ([2, 3, 45, 48].includes(code)) return "cloud";
   if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code))
-    return "cond-rain";
-  if ([71, 73, 75, 77, 85, 86].includes(code)) return "cond-snow";
-  if ([95, 96, 99].includes(code)) return "cond-storm";
-  return "cond-cloud";
+    return "rain";
+  if ([71, 73, 75, 77, 85, 86].includes(code)) return "snow";
+  if ([95, 96, 99].includes(code)) return "storm";
+  return "cloud";
 }
 
 let italiaMap = null;
 let mapMarkers = [];
+let rainviewerLayer = null;
 
 async function fetchCapoluogoDay(cap, dayIdx) {
   const params = new URLSearchParams({
@@ -937,29 +948,102 @@ async function fetchCapoluogoDay(cap, dayIdx) {
 }
 
 function createMarker(cap, temp, code) {
-  const cond = wmoToCondition(code);
-  const cls = wmoToMapClass(code);
+  const condKey = wmoToCondKey(code);
+  const colors = COND_COLORS[condKey];
+  const isMobile = window.innerWidth < 768;
+
+  // Mobile: solo pallino + temperatura, senza nome
+  // Desktop: pallino + nome + temperatura
+  const markerHtml = isMobile
+    ? `<div style="
+        background:${colors.bg};
+        border:2px solid ${colors.border};
+        border-radius:20px;
+        padding:2px 7px;
+        font-size:11px;
+        font-weight:700;
+        color:#1a1a2e;
+        white-space:nowrap;
+        box-shadow:0 2px 6px rgba(0,0,0,0.18);
+        display:flex;
+        align-items:center;
+        gap:4px;
+        cursor:pointer;
+      ">
+        <span style="width:8px;height:8px;border-radius:50%;background:${colors.dot};display:inline-block;flex-shrink:0"></span>
+        <span style="color:${colors.border}">${temp}°</span>
+      </div>`
+    : `<div style="
+        background:${colors.bg};
+        border:2px solid ${colors.border};
+        border-radius:20px;
+        padding:3px 10px;
+        font-size:12px;
+        font-weight:700;
+        color:#1a1a2e;
+        white-space:nowrap;
+        box-shadow:0 2px 8px rgba(0,0,0,0.15);
+        display:flex;
+        align-items:center;
+        gap:6px;
+        cursor:pointer;
+      ">
+        <span style="width:10px;height:10px;border-radius:50%;background:${colors.dot};display:inline-block;flex-shrink:0"></span>
+        <span>${cap.name}</span>
+        <span style="color:${colors.border}">${temp}°</span>
+      </div>`;
+
   const icon = L.divIcon({
     className: "",
-    html: `<div class="city-marker">
-      <div class="city-marker-bubble ${cls}">
-        <span>${cond.icon}</span>
-        <span>${cap.name} ${temp}°</span>
-      </div>
-      <div class="city-marker-dot"></div>
-    </div>`,
+    html: markerHtml,
     iconAnchor: [0, 0],
   });
+
   const marker = L.marker([cap.lat, cap.lon], { icon });
-  marker.on("click", () => {
-    dom.searchInput.value = cap.name;
-    dom.searchInput.scrollIntoView({ behavior: "smooth" });
-    fetchLocations(cap.name).then((results) => {
-      if (results && results.length > 0) selectLocation(results[0]);
-    });
-  });
+
+  // Popup sulla mappa invece di rimandare in cima
+  const cond = wmoToCondition(code);
+  marker.bindPopup(
+    `
+    <div style="text-align:center;padding:4px 8px;min-width:120px">
+      <div style="font-size:1.4rem">${cond.icon}</div>
+      <div style="font-weight:700;font-size:1rem">${cap.name}</div>
+      <div style="font-size:1.2rem;font-weight:700;color:${colors.border}">${temp}°C</div>
+      <div style="font-size:0.75rem;color:#666;margin-top:4px">${cond.label}</div>
+      <button onclick="window._mapSelectCity('${cap.name}')" style="
+        margin-top:8px;
+        background:#00a8e8;
+        color:#fff;
+        border:none;
+        border-radius:12px;
+        padding:5px 14px;
+        font-size:0.78rem;
+        font-weight:600;
+        cursor:pointer;
+        width:100%;
+      ">Vedi previsioni</button>
+    </div>
+  `,
+    { maxWidth: 160 },
+  );
+
   return marker;
 }
+
+// Funzione globale per il click "Vedi previsioni" nel popup
+window._mapSelectCity = function (cityName) {
+  dom.searchInput.value = cityName;
+  fetchLocations(cityName).then((results) => {
+    if (results && results.length > 0) {
+      selectLocation(results[0]);
+      // Scorri verso la sezione previsioni
+      setTimeout(() => {
+        dom.forecastSection.scrollIntoView({ behavior: "smooth" });
+      }, 300);
+    }
+  });
+  if (italiaMap) italiaMap.closePopup();
+};
 
 async function updateMapMarkers(dayIdx) {
   mapMarkers.forEach((m) => italiaMap.removeLayer(m));
@@ -975,6 +1059,26 @@ async function updateMapMarkers(dayIdx) {
   });
 }
 
+async function addRainViewerLayer() {
+  try {
+    const res = await fetch(
+      "https://api.rainviewer.com/public/weather-maps.json",
+    );
+    const data = await res.json();
+    const frames = data.radar?.past;
+    if (!frames || !frames.length) return;
+    const latest = frames[frames.length - 1];
+    const tileUrl = `https://tilecache.rainviewer.com${latest.path}/256/{z}/{x}/{y}/2/1_1.png`;
+    rainviewerLayer = L.tileLayer(tileUrl, {
+      opacity: 0.5,
+      attribution: '&copy; <a href="https://rainviewer.com">RainViewer</a>',
+    });
+    rainviewerLayer.addTo(italiaMap);
+  } catch (e) {
+    console.warn("RainViewer non disponibile:", e);
+  }
+}
+
 function initMap() {
   if (italiaMap) return;
   if (typeof L === "undefined") return;
@@ -984,20 +1088,27 @@ function initMap() {
     zoom: 5,
     scrollWheelZoom: false,
     zoomControl: true,
+    minZoom: 2,
   });
 
+  // Tile desaturato chiaro
   L.tileLayer(
     "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
     {
-      attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
+      attribution:
+        '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://openstreetmap.org">OSM</a>',
       subdomains: "abcd",
-      maxZoom: 10,
-      minZoom: 4,
+      maxZoom: 18,
     },
   ).addTo(italiaMap);
 
+  // Layer radar RainViewer
+  addRainViewerLayer();
+
+  // Marker capoluoghi
   updateMapMarkers(0);
 
+  // Timeline pulsanti
   document.querySelectorAll(".map-day-btn").forEach((btn) => {
     btn.addEventListener("click", function () {
       document
@@ -1009,7 +1120,7 @@ function initMap() {
   });
 }
 
-// Inizializza la mappa quando diventa visibile
+// Inizializza mappa quando visibile
 const mapObserver = new IntersectionObserver(
   (entries) => {
     if (entries[0].isIntersecting) {
