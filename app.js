@@ -1075,16 +1075,7 @@ function initMap() {
   });
 }
 
-// Inizializza mappa quando visibile
-const mapObserver = new IntersectionObserver(
-  (entries) => {
-    if (entries[0].isIntersecting) {
-      initMap();
-      mapObserver.disconnect();
-    }
-  },
-  { threshold: 0.1 },
-);
-
-const mapEl = document.getElementById("italia-map");
-if (mapEl) mapObserver.observe(mapEl);
+// Inizializza mappa dopo caricamento pagina
+document.addEventListener("DOMContentLoaded", () => {
+  setTimeout(initMap, 800);
+});
