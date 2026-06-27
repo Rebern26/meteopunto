@@ -933,7 +933,7 @@ async function fetchCapoluogoDay(cap, dayIdx) {
     longitude: cap.lon,
     daily: "weathercode,temperature_2m_max",
     timezone: "Europe/Rome",
-    forecast_days: 4,
+    forecast_days: 16,
   });
   try {
     const res = await fetch(`${CONFIG.METEO_URL}?${params}`);
@@ -948,55 +948,18 @@ async function fetchCapoluogoDay(cap, dayIdx) {
 }
 
 function createMarker(cap, temp, code) {
-  const condKey = wmoToCondKey(code);
-  const colors = COND_COLORS[condKey];
+  const cond = wmoToCondition(code);
   const isMobile = window.innerWidth < 768;
-
-  // Mobile: solo pallino + temperatura, senza nome
-  // Desktop: pallino + nome + temperatura
-  const markerHtml = isMobile
-    ? `<div style="
-        background:${colors.bg};
-        border:2px solid ${colors.border};
-        border-radius:20px;
-        padding:2px 7px;
-        font-size:11px;
-        font-weight:700;
-        color:#1a1a2e;
-        white-space:nowrap;
-        box-shadow:0 2px 6px rgba(0,0,0,0.18);
-        display:flex;
-        align-items:center;
-        gap:4px;
-        cursor:pointer;
-      ">
-        <span style="width:8px;height:8px;border-radius:50%;background:${colors.dot};display:inline-block;flex-shrink:0"></span>
-        <span style="color:${colors.border}">${temp}°</span>
-      </div>`
-    : `<div style="
-        background:${colors.bg};
-        border:2px solid ${colors.border};
-        border-radius:20px;
-        padding:3px 10px;
-        font-size:12px;
-        font-weight:700;
-        color:#1a1a2e;
-        white-space:nowrap;
-        box-shadow:0 2px 8px rgba(0,0,0,0.15);
-        display:flex;
-        align-items:center;
-        gap:6px;
-        cursor:pointer;
-      ">
-        <span style="width:10px;height:10px;border-radius:50%;background:${colors.dot};display:inline-block;flex-shrink:0"></span>
-        <span>${cap.name}</span>
-        <span style="color:${colors.border}">${temp}°</span>
-      </div>`;
+  const iconSize = isMobile ? "1.4rem" : "1.8rem";
+  const tempSize = isMobile ? "10px" : "12px";
 
   const icon = L.divIcon({
     className: "",
-    html: markerHtml,
-    iconAnchor: [0, 0],
+    html: `<div style="display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.25));">
+      <span style="font-size:${iconSize};line-height:1">${cond.icon}</span>
+      <span style="font-size:${tempSize};font-weight:700;color:#1a1a2e;background:rgba(255,255,255,0.85);border-radius:6px;padding:1px 4px;line-height:1.3;">${temp}°</span>
+    </div>`,
+    iconAnchor: [12, 12],
   });
 
   const marker = L.marker([cap.lat, cap.lon], { icon });
