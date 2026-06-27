@@ -948,7 +948,7 @@ async function fetchCapoluogoDay(cap, dayIdx) {
 }
 
 function createMarker(cap, temp, code) {
-  const cond = wmoToCondition(code);
+  const markerCond = wmoToCondition(code);
   const isMobile = window.innerWidth < 768;
   const iconSize = isMobile ? "1.4rem" : "1.8rem";
   const tempSize = isMobile ? "10px" : "12px";
@@ -956,7 +956,7 @@ function createMarker(cap, temp, code) {
   const icon = L.divIcon({
     className: "",
     html: `<div style="display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.25));">
-      <span style="font-size:${iconSize};line-height:1">${cond.icon}</span>
+      <span style="font-size:${iconSize};line-height:1">${markerCond.icon}</span>
       <span style="font-size:${tempSize};font-weight:700;color:#1a1a2e;background:rgba(255,255,255,0.85);border-radius:6px;padding:1px 4px;line-height:1.3;">${temp}°</span>
     </div>`,
     iconAnchor: [12, 12],
@@ -964,26 +964,18 @@ function createMarker(cap, temp, code) {
 
   const marker = L.marker([cap.lat, cap.lon], { icon });
 
-  // Popup sulla mappa invece di rimandare in cima
-  const cond = wmoToCondition(code);
+  const popupCond = wmoToCondition(code);
   marker.bindPopup(
     `
     <div style="text-align:center;padding:4px 8px;min-width:120px">
-      <div style="font-size:1.4rem">${cond.icon}</div>
+      <div style="font-size:1.4rem">${popupCond.icon}</div>
       <div style="font-weight:700;font-size:1rem">${cap.name}</div>
-      <div style="font-size:1.2rem;font-weight:700;color:${colors.border}">${temp}°C</div>
-      <div style="font-size:0.75rem;color:#666;margin-top:4px">${cond.label}</div>
+      <div style="font-size:1.2rem;font-weight:700;color:#00a8e8">${temp}°C</div>
+      <div style="font-size:0.75rem;color:#666;margin-top:4px">${popupCond.label}</div>
       <button onclick="window._mapSelectCity('${cap.name}')" style="
-        margin-top:8px;
-        background:#00a8e8;
-        color:#fff;
-        border:none;
-        border-radius:12px;
-        padding:5px 14px;
-        font-size:0.78rem;
-        font-weight:600;
-        cursor:pointer;
-        width:100%;
+        margin-top:8px;background:#00a8e8;color:#fff;border:none;
+        border-radius:12px;padding:5px 14px;font-size:0.78rem;
+        font-weight:600;cursor:pointer;width:100%;
       ">Vedi previsioni</button>
     </div>
   `,
