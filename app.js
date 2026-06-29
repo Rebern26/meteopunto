@@ -117,10 +117,14 @@ function highlightMatch(text, query) {
   return escaped.replace(re, "<mark>$1</mark>");
 }
 
-function wmoToCondition(code) {
+function wmoToCondition(code, hour) {
+  // Se non specificata, usa l'ora corrente
+  const h = hour !== undefined ? hour : new Date().getHours();
+  const isNight = h >= 21 || h < 6;
+
   const map = {
-    0: { label: "Cielo sereno", icon: "☀️" },
-    1: { label: "Poco nuvoloso", icon: "🌤️" },
+    0: { label: "Cielo sereno", icon: isNight ? "🌙" : "☀️" },
+    1: { label: "Poco nuvoloso", icon: isNight ? "🌙" : "🌤️" },
     2: { label: "Parzialmente nuvoloso", icon: "⛅" },
     3: { label: "Coperto", icon: "☁️" },
     45: { label: "Nebbia", icon: "🌫️" },
@@ -442,7 +446,7 @@ function renderHourlyTimeline(weather, dayIdx) {
   const precipProb = weather.hourly.precipitation_probability || [];
   for (let h = 0; h < 24; h++) {
     const idx = baseIdx + h;
-    const cond = wmoToCondition(weather.hourly.weathercode[idx]);
+    const cond = wmoToCondition(weather.hourly.weathercode[idx], h);
     const temp = Math.round(weather.hourly.temperature_2m[idx]);
     const prob = precipProb[idx] ?? 0;
     const isNow = isToday && h === nowHour;
