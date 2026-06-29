@@ -277,6 +277,7 @@ function renderAll(weather, marine, loc, dayIdx) {
   renderLiveWeather(weather, loc, dayIdx);
   renderHourlyTimeline(weather, dayIdx);
   renderServicePanel(weather, marine, dayIdx, state.activeService);
+  updateCornerDate(dayIdx, weather);
   dom.serviceTabs.forEach((btn) => {
     btn.classList.toggle("active", btn.dataset.service === state.activeService);
     btn.setAttribute(
@@ -352,6 +353,7 @@ function renderDayTabs(weather, selectedIdx) {
         idx,
         state.activeService,
       );
+      updateCornerDate(idx, state.weatherData);
     });
     dom.dayTabs.appendChild(btn);
   });
@@ -482,6 +484,44 @@ function renderServicePanel(weather, marine, dayIdx, service) {
       renderServiceUV(weather, dayIdx);
       break;
   }
+}
+
+function updateCornerDate(idx, weather) {
+  const el = document.getElementById("data-angolo-dettaglio");
+  if (!el) return;
+  if (idx === 0) {
+    el.textContent = "Oggi";
+    return;
+  }
+  if (idx === 1) {
+    el.textContent = "Domani";
+    return;
+  }
+  const d = new Date(weather.daily.time[idx]);
+  const giorniEstesi = [
+    "Domenica",
+    "Lunedì",
+    "Martedì",
+    "Mercoledì",
+    "Giovedì",
+    "Venerdì",
+    "Sabato",
+  ];
+  const mesiEstesi = [
+    "Gennaio",
+    "Febbraio",
+    "Marzo",
+    "Aprile",
+    "Maggio",
+    "Giugno",
+    "Luglio",
+    "Agosto",
+    "Settembre",
+    "Ottobre",
+    "Novembre",
+    "Dicembre",
+  ];
+  el.textContent = `${giorniEstesi[d.getDay()]} ${d.getDate()} ${mesiEstesi[d.getMonth()]}`;
 }
 
 const FASCE_LABEL = [

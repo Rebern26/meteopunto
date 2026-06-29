@@ -1464,3 +1464,23 @@ input {
     padding: var(--space-lg);
   }
 }
+
+/* ═══════════════════════════════════════
+   DATA ANGOLO DETTAGLIO
+═══════════════════════════════════════ */
+.service-panel-wrap {
+  position: relative;
+  padding-top: 28px;
+}
+
+.corner-date {
+  position: absolute;
+  top: 4px;
+  left: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-sky);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  pointer-events: none;
+}
