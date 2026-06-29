@@ -744,6 +744,7 @@ function selectLocation(result) {
     name: result.name,
     region: result.admin1 || "",
     country: result.country || "",
+    country_code: result.country_code || "",
     latitude: result.latitude,
     longitude: result.longitude,
     elevation: result.elevation || null,
@@ -752,7 +753,15 @@ function selectLocation(result) {
   const sub = formatLocationLabel(result);
   dom.searchInput.value = sub ? `${result.name}, ${sub}` : result.name;
   closeAutocomplete();
+  updateAllerteVisibility(result.country_code);
   loadWeatherData(state.selectedLocation);
+}
+
+function updateAllerteVisibility(countryCode) {
+  const allerteSection = document.getElementById("allerte");
+  if (!allerteSection) return;
+  const isItaly = countryCode === "IT";
+  allerteSection.hidden = !isItaly;
 }
 
 function injectAutocompleteCSS() {
@@ -899,6 +908,7 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
         name: cityName,
         region,
         country,
+        country_code: "IT",
         latitude: data.latitude,
         longitude: data.longitude,
         elevation: null,
@@ -906,6 +916,7 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
       };
       dom.searchInput.value = cityName;
       state.selectedLocation = location;
+      updateAllerteVisibility("IT");
       loadWeatherData(location);
     } else {
       dom.searchInput.value = "Roma, Lazio";
@@ -1246,6 +1257,22 @@ function initMap() {
       } else if (txt === "Radar") {
         e.preventDefault();
         mapEl.scrollIntoView({ behavior: "smooth" });
+      } else if (txt === "Allerte") {
+        e.preventDefault();
+        const allerteSection = document.getElementById("allerte");
+        const isItaly = state.selectedLocation?.country_code === "IT";
+        if (allerteSection && !allerteSection.hidden) {
+          allerteSection.scrollIntoView({ behavior: "smooth" });
+        } else {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+          setTimeout(
+            () =>
+              alert(
+                "Il servizio di monitoraggio allerte è attivo sul territorio italiano.",
+              ),
+            600,
+          );
+        }
       }
     });
   });
