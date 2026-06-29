@@ -918,8 +918,9 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
 })();
 
 /* ═══════════════════════════════════════
-   MAPPA INTERATTIVA – 20 CAPOLUOGHI
-   + RainViewer layer live
+   MAPPA INTERATTIVA – GLOBALE
+   20 capoluoghi IT + capitali EU + metropoli mondo
+   + RainViewer layer live + zoom anti-caos
 ═══════════════════════════════════════ */
 const CAPOLUOGHI = [
   { name: "Roma", lat: 41.8919, lon: 12.5113 },
@@ -944,27 +945,49 @@ const CAPOLUOGHI = [
   { name: "Cagliari", lat: 39.2238, lon: 9.1217 },
 ];
 
-// Colori per condizione meteo
-const COND_COLORS = {
-  clear: { bg: "#FFF3CD", border: "#F57C00", dot: "#F57C00" }, // giallo
-  cloud: { bg: "#ECEFF1", border: "#78909C", dot: "#78909C" }, // grigio medio
-  rain: { bg: "#E3F2FD", border: "#1565C0", dot: "#1565C0" }, // blu
-  storm: { bg: "#F3E5F5", border: "#6A1B9A", dot: "#6A1B9A" }, // viola
-  snow: { bg: "#E8F4FD", border: "#5DADE2", dot: "#5DADE2" }, // azzurro
-};
+const CAPITALI_EU = [
+  { name: "Londra", lat: 51.5074, lon: -0.1278 },
+  { name: "Parigi", lat: 48.8566, lon: 2.3522 },
+  { name: "Berlino", lat: 52.52, lon: 13.405 },
+  { name: "Madrid", lat: 40.4168, lon: -3.7038 },
+  { name: "Vienna", lat: 48.2082, lon: 16.3738 },
+  { name: "Atene", lat: 37.9838, lon: 23.7275 },
+  { name: "Varsavia", lat: 52.2297, lon: 21.0122 },
+];
 
-function wmoToCondKey(code) {
-  if ([0, 1].includes(code)) return "clear";
-  if ([2, 3, 45, 48].includes(code)) return "cloud";
+const METROPOLI_MONDO = [
+  { name: "New York", lat: 40.7128, lon: -74.006 },
+  { name: "Tokyo", lat: 35.6762, lon: 139.6503 },
+  { name: "Sydney", lat: -33.8688, lon: 151.2093 },
+  { name: "Cairo", lat: 30.0444, lon: 31.2357 },
+  { name: "Buenos Aires", lat: -34.6037, lon: -58.3816 },
+  { name: "Rio de Janeiro", lat: -22.9068, lon: -43.1729 },
+  { name: "Mumbai", lat: 19.076, lon: 72.8777 },
+  { name: "Pechino", lat: 39.9042, lon: 116.4074 },
+];
+
+function wmoToMapClass(code) {
+  if ([0, 1].includes(code)) return "cond-clear";
+  if ([2, 3, 45, 48].includes(code)) return "cond-cloud";
   if ([51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82].includes(code))
-    return "rain";
-  if ([71, 73, 75, 77, 85, 86].includes(code)) return "snow";
-  if ([95, 96, 99].includes(code)) return "storm";
-  return "cloud";
+    return "cond-rain";
+  if ([71, 73, 75, 77, 85, 86].includes(code)) return "cond-snow";
+  if ([95, 96, 99].includes(code)) return "cond-storm";
+  return "cond-cloud";
 }
+
+const COND_COLORS = {
+  clear: { bg: "#FFF3CD", border: "#F57C00", dot: "#F57C00" },
+  cloud: { bg: "#ECEFF1", border: "#78909C", dot: "#78909C" },
+  rain: { bg: "#E3F2FD", border: "#1565C0", dot: "#1565C0" },
+  storm: { bg: "#F3E5F5", border: "#6A1B9A", dot: "#6A1B9A" },
+  snow: { bg: "#E8F4FD", border: "#5DADE2", dot: "#5DADE2" },
+};
 
 let italiaMap = null;
 let mapMarkers = [];
+let mapMarkersEU = [];
+let mapMarkersMondo = [];
 let rainviewerLayer = null;
 
 async function fetchCapoluogoDay(cap, dayIdx) {
@@ -1025,13 +1048,43 @@ function createMarker(cap, temp, code) {
   return marker;
 }
 
-// Funzione globale per il click "Vedi previsioni" nel popup
+function createStaticMarker(city) {
+  const isMobile = window.innerWidth < 768;
+  const iconSize = isMobile ? "1.2rem" : "1.5rem";
+  const nameSize = isMobile ? "9px" : "11px";
+
+  const icon = L.divIcon({
+    className: "",
+    html: `<div style="display:flex;flex-direction:column;align-items:center;gap:1px;cursor:pointer;filter:drop-shadow(0 1px 3px rgba(0,0,0,0.25));">
+      <span style="font-size:${iconSize};line-height:1">🌍</span>
+      <span style="font-size:${nameSize};font-weight:700;color:#1a1a2e;background:rgba(255,255,255,0.85);border-radius:6px;padding:1px 5px;line-height:1.3;white-space:nowrap;">${city.name}</span>
+    </div>`,
+    iconAnchor: [12, 12],
+  });
+
+  const marker = L.marker([city.lat, city.lon], { icon });
+  marker.bindPopup(
+    `
+    <div style="text-align:center;padding:4px 8px;min-width:120px">
+      <div style="font-weight:700;font-size:1rem">${city.name}</div>
+      <button onclick="window._mapSelectCity('${city.name}')" style="
+        margin-top:8px;background:#00a8e8;color:#fff;border:none;
+        border-radius:12px;padding:5px 14px;font-size:0.78rem;
+        font-weight:600;cursor:pointer;width:100%;
+      ">Vedi previsioni</button>
+    </div>
+  `,
+    { maxWidth: 140 },
+  );
+
+  return marker;
+}
+
 window._mapSelectCity = function (cityName) {
   dom.searchInput.value = cityName;
   fetchLocations(cityName).then((results) => {
     if (results && results.length > 0) {
       selectLocation(results[0]);
-      // Scorri verso la sezione previsioni
       setTimeout(() => {
         dom.forecastSection.scrollIntoView({ behavior: "smooth" });
       }, 300);
@@ -1049,9 +1102,29 @@ async function updateMapMarkers(dayIdx) {
   CAPOLUOGHI.forEach((cap, i) => {
     const { temp, code } = results[i];
     const marker = createMarker(cap, temp, code);
-    marker.addTo(italiaMap);
     mapMarkers.push(marker);
   });
+  applyZoomVisibility(italiaMap.getZoom());
+}
+
+function buildStaticMarkers() {
+  mapMarkersEU = CAPITALI_EU.map((city) => createStaticMarker(city));
+  mapMarkersMondo = METROPOLI_MONDO.map((city) => createStaticMarker(city));
+}
+
+function applyZoomVisibility(zoom) {
+  // Rimuovi tutti
+  [...mapMarkers, ...mapMarkersEU, ...mapMarkersMondo].forEach((m) => {
+    if (italiaMap.hasLayer(m)) italiaMap.removeLayer(m);
+  });
+
+  if (zoom >= 5) {
+    mapMarkers.forEach((m) => m.addTo(italiaMap));
+  } else if (zoom === 4) {
+    mapMarkersEU.forEach((m) => m.addTo(italiaMap));
+  } else {
+    mapMarkersMondo.forEach((m) => m.addTo(italiaMap));
+  }
 }
 
 async function addRainViewerLayer() {
@@ -1086,7 +1159,6 @@ function initMap() {
     minZoom: 2,
   });
 
-  // Tile desaturato chiaro
   L.tileLayer(
     "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
     {
@@ -1097,11 +1169,14 @@ function initMap() {
     },
   ).addTo(italiaMap);
 
-  // Layer radar RainViewer
   addRainViewerLayer();
-
-  // Marker capoluoghi
+  buildStaticMarkers();
   updateMapMarkers(0);
+
+  // Zoom anti-caos
+  italiaMap.on("zoomend", () => {
+    applyZoomVisibility(italiaMap.getZoom());
+  });
 
   // Timeline pulsanti
   document.querySelectorAll(".map-day-btn").forEach((btn) => {
@@ -1111,6 +1186,32 @@ function initMap() {
         .forEach((b) => b.classList.remove("active"));
       this.classList.add("active");
       updateMapMarkers(parseInt(this.dataset.day));
+    });
+  });
+
+  // Menu navbar → sposta mappa
+  document.querySelectorAll(".nav-link").forEach((link) => {
+    link.addEventListener("click", function (e) {
+      const txt = this.textContent.trim();
+      const mapEl = document.getElementById("italia-map");
+      if (!mapEl) return;
+
+      if (txt === "Italia" || txt === "Mappe") {
+        e.preventDefault();
+        mapEl.scrollIntoView({ behavior: "smooth" });
+        setTimeout(() => italiaMap.flyTo([42.5, 12.5], 5), 400);
+      } else if (txt === "Europa") {
+        e.preventDefault();
+        mapEl.scrollIntoView({ behavior: "smooth" });
+        setTimeout(() => italiaMap.flyTo([54.0, 15.0], 4), 400);
+      } else if (txt === "Mondo") {
+        e.preventDefault();
+        mapEl.scrollIntoView({ behavior: "smooth" });
+        setTimeout(() => italiaMap.flyTo([20.0, 0.0], 2), 400);
+      } else if (txt === "Radar") {
+        e.preventDefault();
+        mapEl.scrollIntoView({ behavior: "smooth" });
+      }
     });
   });
 }
