@@ -1573,3 +1573,18 @@ input {
     gap: 12px;
   }
 }
+
+/* ─── FIX MAPPA SOTTO NAVBAR ───────────────────────────── */
+.site-header {
+  z-index: 1000 !important;
+}
+
+.leaflet-pane,
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 10 !important;
+}
+
+#italia-map {
+  z-index: 0;
+}
