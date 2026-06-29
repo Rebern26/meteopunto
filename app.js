@@ -953,17 +953,45 @@ const CAPITALI_EU = [
   { name: "Vienna", lat: 48.2082, lon: 16.3738 },
   { name: "Atene", lat: 37.9838, lon: 23.7275 },
   { name: "Varsavia", lat: 52.2297, lon: 21.0122 },
+  { name: "Amsterdam", lat: 52.3676, lon: 4.9041 },
+  { name: "Bruxelles", lat: 50.8503, lon: 4.3517 },
+  { name: "Lisbona", lat: 38.7169, lon: -9.1399 },
+  { name: "Stoccolma", lat: 59.3293, lon: 18.0686 },
+  { name: "Oslo", lat: 59.9139, lon: 10.7522 },
+  { name: "Copenaghen", lat: 55.6761, lon: 12.5683 },
+  { name: "Helsinki", lat: 60.1699, lon: 24.9384 },
+  { name: "Zurigo", lat: 47.3769, lon: 8.5417 },
+  { name: "Praga", lat: 50.0755, lon: 14.4378 },
+  { name: "Budapest", lat: 47.4979, lon: 19.0402 },
+  { name: "Bucarest", lat: 44.4268, lon: 26.1025 },
+  { name: "Mosca", lat: 55.7558, lon: 37.6173 },
+  { name: "Istanbul", lat: 41.0082, lon: 28.9784 },
 ];
 
 const METROPOLI_MONDO = [
   { name: "New York", lat: 40.7128, lon: -74.006 },
+  { name: "Los Angeles", lat: 34.0522, lon: -118.2437 },
+  { name: "Chicago", lat: 41.8781, lon: -87.6298 },
+  { name: "Toronto", lat: 43.6532, lon: -79.3832 },
+  { name: "Città del Messico", lat: 19.4326, lon: -99.1332 },
   { name: "Tokyo", lat: 35.6762, lon: 139.6503 },
+  { name: "Pechino", lat: 39.9042, lon: 116.4074 },
+  { name: "Shanghai", lat: 31.2304, lon: 121.4737 },
+  { name: "Seoul", lat: 37.5665, lon: 126.978 },
+  { name: "Mumbai", lat: 19.076, lon: 72.8777 },
+  { name: "Delhi", lat: 28.6139, lon: 77.209 },
+  { name: "Dubai", lat: 25.2048, lon: 55.2708 },
+  { name: "Singapore", lat: 1.3521, lon: 103.8198 },
   { name: "Sydney", lat: -33.8688, lon: 151.2093 },
+  { name: "Melbourne", lat: -37.8136, lon: 144.9631 },
   { name: "Cairo", lat: 30.0444, lon: 31.2357 },
+  { name: "Lagos", lat: 6.5244, lon: 3.3792 },
+  { name: "Johannesburg", lat: -26.2041, lon: 28.0473 },
   { name: "Buenos Aires", lat: -34.6037, lon: -58.3816 },
   { name: "Rio de Janeiro", lat: -22.9068, lon: -43.1729 },
-  { name: "Mumbai", lat: 19.076, lon: 72.8777 },
-  { name: "Pechino", lat: 39.9042, lon: 116.4074 },
+  { name: "São Paulo", lat: -23.5505, lon: -46.6333 },
+  { name: "Bogotà", lat: 4.711, lon: -74.0721 },
+  { name: "Lima", lat: -12.0464, lon: -77.0428 },
 ];
 
 function wmoToMapClass(code) {
@@ -1063,19 +1091,22 @@ function createStaticMarker(city) {
   });
 
   const marker = L.marker([city.lat, city.lon], { icon });
-  marker.bindPopup(
-    `
-    <div style="text-align:center;padding:4px 8px;min-width:120px">
-      <div style="font-weight:700;font-size:1rem">${city.name}</div>
-      <button onclick="window._mapSelectCity('${city.name}')" style="
-        margin-top:8px;background:#00a8e8;color:#fff;border:none;
-        border-radius:12px;padding:5px 14px;font-size:0.78rem;
-        font-weight:600;cursor:pointer;width:100%;
-      ">Vedi previsioni</button>
-    </div>
-  `,
-    { maxWidth: 140 },
+
+  // Tooltip al passaggio del mouse
+  marker.bindTooltip(
+    `<div style="text-align:center;padding:2px 6px;font-size:0.78rem;font-weight:600;">
+    ${city.name}<br>
+    <span style="color:#00a8e8;font-size:0.72rem;">Clicca per le previsioni</span>
+  </div>`,
+    {
+      direction: "top",
+      offset: [0, -10],
+      permanent: false,
+    },
   );
+
+  // Click per caricare le previsioni
+  marker.on("click", () => window._mapSelectCity(city.name));
 
   return marker;
 }
