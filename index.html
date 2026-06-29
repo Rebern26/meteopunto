@@ -24,6 +24,118 @@
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
+    <!-- COOKIE BANNER -->
+    <div class="cookie-banner" id="cookie-banner" hidden>
+      <div class="cookie-banner-inner">
+        <p class="cookie-banner-text">
+          🍪 Usiamo cookie tecnici per il corretto funzionamento del sito.
+          Rileviamo automaticamente la tua posizione tramite IP per mostrarti le
+          previsioni meteo locali. Nessun dato viene salvato o ceduto a terzi.
+          <button
+            class="cookie-link"
+            onclick="
+              document.getElementById('privacy-modal').classList.add('open')
+            "
+          >
+            Leggi la Privacy Policy
+          </button>
+        </p>
+        <div class="cookie-banner-actions">
+          <button class="cookie-btn cookie-btn-reject" id="cookie-reject">
+            Rifiuta
+          </button>
+          <button class="cookie-btn cookie-btn-accept" id="cookie-accept">
+            Accetta
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- POPUP PRIVACY POLICY -->
+    <div class="privacy-modal" id="privacy-modal">
+      <div class="privacy-modal-box">
+        <button
+          class="privacy-modal-close"
+          onclick="
+            document.getElementById('privacy-modal').classList.remove('open')
+          "
+          aria-label="Chiudi"
+        >
+          ✕
+        </button>
+        <h2 class="privacy-modal-title">Privacy Policy</h2>
+        <p class="privacy-modal-updated">
+          Aggiornata al 2026 – Conforme al GDPR UE 2016/679
+        </p>
+
+        <h3>1. Titolare del trattamento</h3>
+        <p>
+          MeteoPunto.com è un servizio di previsioni meteo online. Per qualsiasi
+          informazione:
+          <a href="mailto:info@meteopunto.com">info@meteopunto.com</a>
+        </p>
+
+        <h3>2. Geolocalizzazione automatica</h3>
+        <p>
+          MeteoPunto.com rileva automaticamente la tua località all'avvio
+          tramite indirizzo IP, al solo scopo di mostrarti le previsioni meteo
+          in tempo reale della tua zona. Questa operazione avviene interamente
+          nel browser, in modo anonimo, senza memorizzazione di alcun dato sui
+          nostri server.
+        </p>
+
+        <h3>3. Dati di posizione</h3>
+        <p>
+          I dati sulla tua posizione geografica vengono elaborati dal browser al
+          volo in modo totalmente anonimo e
+          <strong
+            >NON vengono in nessun modo salvati, archiviati nei nostri server o
+            ceduti a terzi</strong
+          >. Non viene mai richiesto l'accesso al GPS del dispositivo senza
+          esplicito consenso dell'utente.
+        </p>
+
+        <h3>4. Cookie tecnici</h3>
+        <p>
+          Il sito utilizza esclusivamente cookie tecnici necessari al
+          funzionamento (es. salvataggio delle preferenze cookie). Non
+          utilizziamo cookie di profilazione o di terze parti senza consenso.
+        </p>
+
+        <h3>5. Cookie pubblicitari</h3>
+        <p>
+          In futuro il sito potrebbe mostrare annunci pubblicitari tramite
+          servizi di terze parti (es. Google AdSense). In tal caso verrà
+          richiesto il consenso esplicito prima dell'attivazione.
+        </p>
+
+        <h3>6. Diritti dell'utente (GDPR)</h3>
+        <p>
+          Ai sensi del Regolamento UE 2016/679 (GDPR), hai diritto di accesso,
+          rettifica, cancellazione e portabilità dei tuoi dati. Poiché non
+          raccogliamo dati personali identificabili, tali diritti si applicano
+          in forma limitata. Per qualsiasi richiesta:
+          <a href="mailto:info@meteopunto.com">info@meteopunto.com</a>
+        </p>
+
+        <h3>7. Base giuridica</h3>
+        <p>
+          Il trattamento dei dati avviene sulla base del legittimo interesse del
+          titolare a fornire un servizio meteo personalizzato (Art. 6(1)(f)
+          GDPR), nel pieno rispetto della normativa europea sulla privacy.
+        </p>
+
+        <button
+          class="privacy-modal-btn-close"
+          onclick="
+            document.getElementById('privacy-modal').classList.remove('open')
+          "
+        >
+          Chiudi
+        </button>
+      </div>
+    </div>
+
     <!-- NAVBAR -->
     <header class="site-header" role="banner">
       <nav class="navbar" aria-label="Navigazione principale">
@@ -137,6 +249,11 @@
         </div>
       </div>
     </section>
+
+    <!-- AD BOX 1 – sotto la barra di ricerca -->
+    <div class="ad-placeholder" aria-hidden="true">
+      <span class="ad-label">Pubblicità</span>
+    </div>
 
     <!-- MAIN DASHBOARD -->
     <main id="main-content" class="dashboard" aria-label="Dashboard meteo">
@@ -260,30 +377,27 @@
           </h2>
           <div class="map-section-wrap">
             <div id="italia-map"></div>
-            <!-- LEGENDA -->
             <div class="map-legend">
-              <span class="map-legend-item">
-                <span class="map-legend-dot" style="background: #f57c00"></span>
-                Sereno
-              </span>
-              <span class="map-legend-item">
-                <span class="map-legend-dot" style="background: #1565c0"></span>
-                Pioggia
-              </span>
-              <span class="map-legend-item">
-                <span class="map-legend-dot" style="background: #78909c"></span>
-                Nuvoloso
-              </span>
-              <span class="map-legend-item">
-                <span class="map-legend-dot" style="background: #6a1b9a"></span>
-                Temporale
-              </span>
-              <span class="map-legend-item">
-                <span class="map-legend-snow">❄</span>
-                Neve
-              </span>
+              <span class="map-legend-item"
+                ><span class="map-legend-dot" style="background: #f57c00"></span
+                >Sereno</span
+              >
+              <span class="map-legend-item"
+                ><span class="map-legend-dot" style="background: #1565c0"></span
+                >Pioggia</span
+              >
+              <span class="map-legend-item"
+                ><span class="map-legend-dot" style="background: #78909c"></span
+                >Nuvoloso</span
+              >
+              <span class="map-legend-item"
+                ><span class="map-legend-dot" style="background: #6a1b9a"></span
+                >Temporale</span
+              >
+              <span class="map-legend-item"
+                ><span class="map-legend-snow">❄</span>Neve</span
+              >
             </div>
-            <!-- TIMELINE GIORNI -->
             <div class="map-timeline">
               <button class="map-day-btn active" data-day="0">Oggi</button>
               <button class="map-day-btn" data-day="1">Dom</button>
@@ -307,6 +421,11 @@
       </section>
     </main>
 
+    <!-- AD BOX 2 – sopra il footer -->
+    <div class="ad-placeholder" aria-hidden="true">
+      <span class="ad-label">Pubblicità</span>
+    </div>
+
     <!-- FOOTER -->
     <footer class="site-footer" role="contentinfo">
       <div class="footer-container">
@@ -318,7 +437,18 @@
         <nav class="footer-nav" aria-label="Link footer">
           <ul role="list">
             <li><a href="#">Chi siamo</a></li>
-            <li><a href="#">Privacy Policy</a></li>
+            <li>
+              <a
+                href="#"
+                onclick="
+                  document
+                    .getElementById('privacy-modal')
+                    .classList.add('open');
+                  return false;
+                "
+                >Privacy Policy</a
+              >
+            </li>
             <li><a href="#">Cookie</a></li>
             <li><a href="#">Contatti</a></li>
           </ul>

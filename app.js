@@ -1079,3 +1079,26 @@ function initMap() {
 document.addEventListener("DOMContentLoaded", () => {
   setTimeout(initMap, 800);
 });
+
+/* ═══════════════════════════════════════
+   COOKIE BANNER
+═══════════════════════════════════════ */
+(function initCookieBanner() {
+  const banner = document.getElementById("cookie-banner");
+  if (!banner) return;
+
+  const consent = localStorage.getItem("mp_cookie_consent");
+  if (!consent) {
+    banner.hidden = false;
+  }
+
+  document.getElementById("cookie-accept").addEventListener("click", () => {
+    localStorage.setItem("mp_cookie_consent", "accepted");
+    banner.hidden = true;
+  });
+
+  document.getElementById("cookie-reject").addEventListener("click", () => {
+    localStorage.setItem("mp_cookie_consent", "rejected");
+    banner.hidden = true;
+  });
+})();

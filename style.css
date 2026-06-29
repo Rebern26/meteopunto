@@ -1241,3 +1241,226 @@ input {
   color: #5dade2;
   line-height: 1;
 }
+
+/* ═══════════════════════════════════════
+   BOX PUBBLICITARI
+═══════════════════════════════════════ */
+.ad-placeholder {
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f5f5;
+  border-top: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e8e8e8;
+  min-height: 60px;
+  max-height: 90px;
+  padding: 8px 16px;
+}
+
+.ad-label {
+  font-size: 0.7rem;
+  color: #b0b0b0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 500;
+}
+
+/* ═══════════════════════════════════════
+   COOKIE BANNER
+═══════════════════════════════════════ */
+.cookie-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: #1e2b38;
+  color: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.18);
+  padding: 16px var(--space-lg);
+}
+
+.cookie-banner[hidden] {
+  display: none;
+}
+
+.cookie-banner-inner {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.cookie-banner-text {
+  flex: 1;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.8);
+  min-width: 200px;
+}
+
+.cookie-link {
+  background: none;
+  border: none;
+  color: var(--color-sky);
+  font-size: 0.82rem;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+
+.cookie-banner-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.cookie-btn {
+  padding: 9px 22px;
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  transition: opacity 0.2s ease;
+}
+
+.cookie-btn:hover {
+  opacity: 0.85;
+}
+
+.cookie-btn-accept {
+  background: var(--color-sky);
+  color: #fff;
+}
+
+.cookie-btn-reject {
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* ═══════════════════════════════════════
+   POPUP PRIVACY POLICY
+═══════════════════════════════════════ */
+.privacy-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.55);
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+}
+
+.privacy-modal.open {
+  display: flex;
+}
+
+.privacy-modal-box {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  max-width: 640px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  box-shadow: var(--shadow-lg);
+}
+
+.privacy-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #f0f0f0;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.privacy-modal-title {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.privacy-modal-updated {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-lg);
+}
+
+.privacy-modal-box h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: var(--space-md) 0 6px;
+}
+
+.privacy-modal-box p {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: var(--space-sm);
+}
+
+.privacy-modal-box a {
+  color: var(--color-sky);
+  text-decoration: underline;
+}
+
+.privacy-modal-btn-close {
+  display: block;
+  width: 100%;
+  margin-top: var(--space-lg);
+  padding: 12px;
+  background: var(--color-sky);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-pill);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.2s ease;
+}
+
+.privacy-modal-btn-close:hover {
+  opacity: 0.9;
+}
+
+@media (max-width: 640px) {
+  .cookie-banner-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-md);
+  }
+  .cookie-banner-actions {
+    width: 100%;
+  }
+  .cookie-btn {
+    flex: 1;
+    text-align: center;
+  }
+  .privacy-modal-box {
+    padding: var(--space-lg);
+  }
+}
