@@ -413,46 +413,35 @@ function renderDayTabs(weather, selectedIdx) {
 }
 
 function renderLiveWeather(weather, loc, dayIdx) {
-  const isToday = dayIdx === 0;
+  // La scheda LIVE mostra SEMPRE oggi + ora corrente, indipendentemente
+  // da quale tab giorno l'utente ha selezionato nella riga sotto.
+  // Il parametro dayIdx non viene usato per questa scheda: serve solo
+  // alle altre funzioni (timeline, pannello servizi, ecc.) che invece
+  // devono seguire il giorno selezionato dall'utente.
   const sublabel = loc.region ? `${loc.region}, ${loc.country}` : loc.country;
-  let temp,
-    feelsLike,
-    humidity,
-    windSpeed,
-    windDir,
-    precip,
-    cloudCov,
-    condLabel,
-    condIcon;
-  // Usiamo sempre il blocco "hourly" (stessa fonte della timeline sotto),
-  // così i valori mostrati nella scheda grande coincidono sempre con quelli
-  // della scheda oraria "ORA" — niente più numeri diversi tra le due.
+  // Usiamo sempre il blocco "hourly" del giorno 0 (oggi), stessa fonte
+  // della timeline sotto quando è su "Oggi" — così i valori coincidono.
   const nowHour = new Date().getHours();
-  const hIdx = isToday ? dayIdx * 24 + nowHour : dayIdx * 24 + 12;
-  temp = Math.round(weather.hourly.temperature_2m[hIdx]);
-  feelsLike = Math.round(weather.hourly.apparent_temperature[hIdx]);
-  humidity = Math.round(weather.hourly.relativehumidity_2m[hIdx]);
-  windSpeed = Math.round(weather.hourly.windspeed_10m[hIdx]);
-  windDir = degToDir(weather.hourly.winddirection_10m[hIdx]);
-  precip = 0;
-  cloudCov = weather.hourly.cloud_cover?.[hIdx] ?? 0;
-  const c = wmoToCondition(
-    weather.hourly.weathercode[hIdx],
-    isToday ? nowHour : 12,
-  );
-  condIcon = c.icon;
-  condLabel = c.label;
-  const liveBadgeHTML = isToday
-    ? `<div class="lw-badge"><span class="lw-badge-dot"></span>LIVE – Ora</div>`
-    : `<div class="lw-badge" style="background:rgba(255,255,255,0.1)">📅 Previsione</div>`;
+  const hIdx = nowHour;
+  const temp = Math.round(weather.hourly.temperature_2m[hIdx]);
+  const feelsLike = Math.round(weather.hourly.apparent_temperature[hIdx]);
+  const humidity = Math.round(weather.hourly.relativehumidity_2m[hIdx]);
+  const windSpeed = Math.round(weather.hourly.windspeed_10m[hIdx]);
+  const windDir = degToDir(weather.hourly.winddirection_10m[hIdx]);
+  const precip = 0;
+  const cloudCov = weather.hourly.cloud_cover?.[hIdx] ?? 0;
+  const c = wmoToCondition(weather.hourly.weathercode[hIdx], nowHour);
+  const condIcon = c.icon;
+  const condLabel = c.label;
+  const liveBadgeHTML = `<div class="lw-badge"><span class="lw-badge-dot"></span>LIVE – Ora</div>`;
   const precipHTML =
-    isToday && precip > 0
+    precip > 0
       ? `<p class="lw-precip">🌧️ Precipitazione: ${precip.toFixed(1)} mm</p>`
       : "";
   const cloudHTML =
     cloudCov > 0 ? `<p class="lw-cloud">☁️ Nuvolosità: ${cloudCov}%</p>` : "";
-  const tMax = Math.round(weather.daily.temperature_2m_max[dayIdx]);
-  const tMin = Math.round(weather.daily.temperature_2m_min[dayIdx]);
+  const tMax = Math.round(weather.daily.temperature_2m_max[0]);
+  const tMin = Math.round(weather.daily.temperature_2m_min[0]);
   dom.liveWeatherCard.innerHTML = `
     <div class="lw-layout">
       <div class="lw-main">
@@ -471,7 +460,7 @@ function renderLiveWeather(weather, loc, dayIdx) {
         <div class="lw-stat"><span class="lw-stat-icon">💧</span><span class="lw-stat-label">Umidità</span><span class="lw-stat-value">${humidity}%</span></div>
         <div class="lw-stat"><span class="lw-stat-icon">💨</span><span class="lw-stat-label">Vento</span><span class="lw-stat-value">${windSpeed} km/h ${windDir}</span></div>
         <div class="lw-stat"><span class="lw-stat-icon">🌡️</span><span class="lw-stat-label">Max / Min</span><span class="lw-stat-value">${tMax}° / ${tMin}°</span></div>
-        <div class="lw-stat"><span class="lw-stat-icon">☀️</span><span class="lw-stat-label">UV Max</span><span class="lw-stat-value">${weather.daily.uv_index_max[dayIdx]}</span></div>
+        <div class="lw-stat"><span class="lw-stat-icon">☀️</span><span class="lw-stat-label">UV Max</span><span class="lw-stat-value">${weather.daily.uv_index_max[0]}</span></div>
       </div>
     </div>`;
 }
