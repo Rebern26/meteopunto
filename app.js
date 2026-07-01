@@ -302,7 +302,7 @@ async function silentRefreshWeather() {
 
 /**
  * Avvia l'auto-refresh della scheda LIVE:
- * - ogni 15 minuti aggiorna temperatura/umidità/vento con i dati "current" reali
+ * - ogni 30 minuti aggiorna temperatura/umidità/vento con i dati "current" reali
  * - allo scoccare di ogni ora forza un refresh esatto (cambio icona giorno/notte,
  *   badge "ORA" nella timeline, fascia oraria)
  * Va richiamata ad ogni nuova ricerca/geolocalizzazione per ripartire pulita.
@@ -311,7 +311,7 @@ function startLiveAutoRefresh() {
   if (state.liveRefreshTimer) clearInterval(state.liveRefreshTimer);
   if (state.hourAlignTimer) clearTimeout(state.hourAlignTimer);
 
-  state.liveRefreshTimer = setInterval(silentRefreshWeather, 15 * 60 * 1000);
+  state.liveRefreshTimer = setInterval(silentRefreshWeather, 30 * 60 * 1000);
 
   const now = new Date();
   const msToNextHour =
