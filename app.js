@@ -414,8 +414,6 @@ function renderDayTabs(weather, selectedIdx) {
 
 function renderLiveWeather(weather, loc, dayIdx) {
   const isToday = dayIdx === 0;
-  const cur = weather.current;
-  const cw = weather.current_weather;
   const sublabel = loc.region ? `${loc.region}, ${loc.country}` : loc.country;
   let temp,
     feelsLike,
@@ -426,31 +424,24 @@ function renderLiveWeather(weather, loc, dayIdx) {
     cloudCov,
     condLabel,
     condIcon;
-  if (isToday && cur) {
-    temp = Math.round(cur.temperature_2m);
-    feelsLike = Math.round(cur.apparent_temperature);
-    humidity = Math.round(cur.relative_humidity_2m);
-    windSpeed = Math.round(cur.wind_speed_10m);
-    windDir = degToDir(cur.wind_direction_10m);
-    precip = cur.precipitation ?? 0;
-    cloudCov = cur.cloud_cover ?? 0;
-    let baseCond = wmoToCondition(cur.weather_code ?? cw.weathercode);
-    const nowcasted = applyNowcasting(cur, baseCond);
-    condIcon = nowcasted.icon;
-    condLabel = nowcasted.label;
-  } else {
-    const hIdx = dayIdx * 24 + 12;
-    temp = Math.round(weather.hourly.temperature_2m[hIdx]);
-    feelsLike = Math.round(weather.hourly.apparent_temperature[hIdx]);
-    humidity = Math.round(weather.hourly.relativehumidity_2m[hIdx]);
-    windSpeed = Math.round(weather.hourly.windspeed_10m[hIdx]);
-    windDir = degToDir(weather.hourly.winddirection_10m[hIdx]);
-    precip = 0;
-    cloudCov = weather.hourly.cloud_cover?.[hIdx] ?? 0;
-    const c = wmoToCondition(weather.hourly.weathercode[hIdx]);
-    condIcon = c.icon;
-    condLabel = c.label;
-  }
+  // Usiamo sempre il blocco "hourly" (stessa fonte della timeline sotto),
+  // così i valori mostrati nella scheda grande coincidono sempre con quelli
+  // della scheda oraria "ORA" — niente più numeri diversi tra le due.
+  const nowHour = new Date().getHours();
+  const hIdx = isToday ? dayIdx * 24 + nowHour : dayIdx * 24 + 12;
+  temp = Math.round(weather.hourly.temperature_2m[hIdx]);
+  feelsLike = Math.round(weather.hourly.apparent_temperature[hIdx]);
+  humidity = Math.round(weather.hourly.relativehumidity_2m[hIdx]);
+  windSpeed = Math.round(weather.hourly.windspeed_10m[hIdx]);
+  windDir = degToDir(weather.hourly.winddirection_10m[hIdx]);
+  precip = 0;
+  cloudCov = weather.hourly.cloud_cover?.[hIdx] ?? 0;
+  const c = wmoToCondition(
+    weather.hourly.weathercode[hIdx],
+    isToday ? nowHour : 12,
+  );
+  condIcon = c.icon;
+  condLabel = c.label;
   const liveBadgeHTML = isToday
     ? `<div class="lw-badge"><span class="lw-badge-dot"></span>LIVE – Ora</div>`
     : `<div class="lw-badge" style="background:rgba(255,255,255,0.1)">📅 Previsione</div>`;
