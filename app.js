@@ -377,6 +377,7 @@ function renderLiveWeather(weather, loc, dayIdx) {
     cloudCov,
     condLabel,
     condIcon;
+
   if (isToday && cur) {
     temp = Math.round(cur.temperature_2m);
     feelsLike = Math.round(cur.apparent_temperature);
