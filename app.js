@@ -26,8 +26,6 @@ const state = {
   activeService: "forecast",
   menuOpen: false,
   abortController: null,
-  liveRefreshTimer: null,
-  hourAlignTimer: null,
 };
 
 const dom = {
@@ -267,7 +265,6 @@ async function loadWeatherData(loc) {
     state.selectedDayIdx = 0;
     state.activeService = "forecast";
     renderAll(weather, marine, loc, 0);
-    startLiveAutoRefresh();
   } catch (err) {
     console.error("MeteoPunto – Errore:", err);
     dom.liveWeatherCard.innerHTML = `
@@ -276,52 +273,6 @@ async function loadWeatherData(loc) {
         <p>Errore nel caricamento. Riprova tra poco.</p>
       </div>`;
   }
-}
-
-/**
- * Ricarica i dati meteo in background, senza mostrare lo spinner di
- * caricamento, per non "sfarfallare" la scheda mentre l'utente la guarda.
- * Mantiene il giorno/servizio attualmente selezionato dall'utente.
- */
-async function silentRefreshWeather() {
-  if (!state.selectedLocation) return;
-  try {
-    const [weather, marine] = await Promise.all([
-      fetchWeather(state.selectedLocation),
-      fetchMarine(state.selectedLocation),
-    ]);
-    state.weatherData = weather;
-    state.marineData = marine;
-    renderAll(weather, marine, state.selectedLocation, state.selectedDayIdx);
-  } catch (err) {
-    // Aggiornamento silenzioso: in caso di errore teniamo semplicemente
-    // gli ultimi dati validi mostrati, senza disturbare l'utente.
-    console.error("MeteoPunto – Errore refresh live:", err);
-  }
-}
-
-/**
- * Avvia l'auto-refresh della scheda LIVE:
- * - ogni 30 minuti aggiorna temperatura/umidità/vento con i dati "current" reali
- * - allo scoccare di ogni ora forza un refresh esatto (cambio icona giorno/notte,
- *   badge "ORA" nella timeline, fascia oraria)
- * Va richiamata ad ogni nuova ricerca/geolocalizzazione per ripartire pulita.
- */
-function startLiveAutoRefresh() {
-  if (state.liveRefreshTimer) clearInterval(state.liveRefreshTimer);
-  if (state.hourAlignTimer) clearTimeout(state.hourAlignTimer);
-
-  state.liveRefreshTimer = setInterval(silentRefreshWeather, 30 * 60 * 1000);
-
-  const now = new Date();
-  const msToNextHour =
-    (60 - now.getMinutes()) * 60 * 1000 -
-    now.getSeconds() * 1000 -
-    now.getMilliseconds();
-  state.hourAlignTimer = setTimeout(() => {
-    silentRefreshWeather();
-    state.hourAlignTimer = setInterval(silentRefreshWeather, 60 * 60 * 1000);
-  }, msToNextHour);
 }
 
 function renderAll(weather, marine, loc, dayIdx) {
@@ -413,35 +364,55 @@ function renderDayTabs(weather, selectedIdx) {
 }
 
 function renderLiveWeather(weather, loc, dayIdx) {
-  // La scheda LIVE mostra SEMPRE oggi + ora corrente, indipendentemente
-  // da quale tab giorno l'utente ha selezionato nella riga sotto.
-  // Il parametro dayIdx non viene usato per questa scheda: serve solo
-  // alle altre funzioni (timeline, pannello servizi, ecc.) che invece
-  // devono seguire il giorno selezionato dall'utente.
+  const isToday = dayIdx === 0;
+  const cur = weather.current;
+  const cw = weather.current_weather;
   const sublabel = loc.region ? `${loc.region}, ${loc.country}` : loc.country;
-  // Usiamo sempre il blocco "hourly" del giorno 0 (oggi), stessa fonte
-  // della timeline sotto quando è su "Oggi" — così i valori coincidono.
-  const nowHour = new Date().getHours();
-  const hIdx = nowHour;
-  const temp = Math.round(weather.hourly.temperature_2m[hIdx]);
-  const feelsLike = Math.round(weather.hourly.apparent_temperature[hIdx]);
-  const humidity = Math.round(weather.hourly.relativehumidity_2m[hIdx]);
-  const windSpeed = Math.round(weather.hourly.windspeed_10m[hIdx]);
-  const windDir = degToDir(weather.hourly.winddirection_10m[hIdx]);
-  const precip = 0;
-  const cloudCov = weather.hourly.cloud_cover?.[hIdx] ?? 0;
-  const c = wmoToCondition(weather.hourly.weathercode[hIdx], nowHour);
-  const condIcon = c.icon;
-  const condLabel = c.label;
-  const liveBadgeHTML = `<div class="lw-badge"><span class="lw-badge-dot"></span>LIVE – Ora</div>`;
+  let temp,
+    feelsLike,
+    humidity,
+    windSpeed,
+    windDir,
+    precip,
+    cloudCov,
+    condLabel,
+    condIcon;
+  if (isToday && cur) {
+    temp = Math.round(cur.temperature_2m);
+    feelsLike = Math.round(cur.apparent_temperature);
+    humidity = Math.round(cur.relative_humidity_2m);
+    windSpeed = Math.round(cur.wind_speed_10m);
+    windDir = degToDir(cur.wind_direction_10m);
+    precip = cur.precipitation ?? 0;
+    cloudCov = cur.cloud_cover ?? 0;
+    let baseCond = wmoToCondition(cur.weather_code ?? cw.weathercode);
+    const nowcasted = applyNowcasting(cur, baseCond);
+    condIcon = nowcasted.icon;
+    condLabel = nowcasted.label;
+  } else {
+    const hIdx = dayIdx * 24 + 12;
+    temp = Math.round(weather.hourly.temperature_2m[hIdx]);
+    feelsLike = Math.round(weather.hourly.apparent_temperature[hIdx]);
+    humidity = Math.round(weather.hourly.relativehumidity_2m[hIdx]);
+    windSpeed = Math.round(weather.hourly.windspeed_10m[hIdx]);
+    windDir = degToDir(weather.hourly.winddirection_10m[hIdx]);
+    precip = 0;
+    cloudCov = weather.hourly.cloud_cover?.[hIdx] ?? 0;
+    const c = wmoToCondition(weather.hourly.weathercode[hIdx]);
+    condIcon = c.icon;
+    condLabel = c.label;
+  }
+  const liveBadgeHTML = isToday
+    ? `<div class="lw-badge"><span class="lw-badge-dot"></span>LIVE – Ora</div>`
+    : `<div class="lw-badge" style="background:rgba(255,255,255,0.1)">📅 Previsione</div>`;
   const precipHTML =
-    precip > 0
+    isToday && precip > 0
       ? `<p class="lw-precip">🌧️ Precipitazione: ${precip.toFixed(1)} mm</p>`
       : "";
   const cloudHTML =
     cloudCov > 0 ? `<p class="lw-cloud">☁️ Nuvolosità: ${cloudCov}%</p>` : "";
-  const tMax = Math.round(weather.daily.temperature_2m_max[0]);
-  const tMin = Math.round(weather.daily.temperature_2m_min[0]);
+  const tMax = Math.round(weather.daily.temperature_2m_max[dayIdx]);
+  const tMin = Math.round(weather.daily.temperature_2m_min[dayIdx]);
   dom.liveWeatherCard.innerHTML = `
     <div class="lw-layout">
       <div class="lw-main">
@@ -460,7 +431,7 @@ function renderLiveWeather(weather, loc, dayIdx) {
         <div class="lw-stat"><span class="lw-stat-icon">💧</span><span class="lw-stat-label">Umidità</span><span class="lw-stat-value">${humidity}%</span></div>
         <div class="lw-stat"><span class="lw-stat-icon">💨</span><span class="lw-stat-label">Vento</span><span class="lw-stat-value">${windSpeed} km/h ${windDir}</span></div>
         <div class="lw-stat"><span class="lw-stat-icon">🌡️</span><span class="lw-stat-label">Max / Min</span><span class="lw-stat-value">${tMax}° / ${tMin}°</span></div>
-        <div class="lw-stat"><span class="lw-stat-icon">☀️</span><span class="lw-stat-label">UV Max</span><span class="lw-stat-value">${weather.daily.uv_index_max[0]}</span></div>
+        <div class="lw-stat"><span class="lw-stat-icon">☀️</span><span class="lw-stat-label">UV Max</span><span class="lw-stat-value">${weather.daily.uv_index_max[dayIdx]}</span></div>
       </div>
     </div>`;
 }
@@ -876,15 +847,6 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
   });
 });
 
-// Quando l'utente torna su questa scheda del browser (dopo averla lasciata
-// in background), forziamo subito un refresh: così i dati LIVE non sono mai
-// vecchi quando l'utente li guarda di nuovo.
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && state.selectedLocation) {
-    silentRefreshWeather();
-  }
-});
-
 /* ═══════════════════════════════════════
    INIT
 ═══════════════════════════════════════ */
@@ -1278,29 +1240,36 @@ function initMap() {
     link.addEventListener("click", function (e) {
       const txt = this.textContent.trim();
       const mapEl = document.getElementById("italia-map");
-      if (!mapEl) return;
+      const navHeight =
+        document.querySelector(".site-header")?.offsetHeight || 64;
+
+      function scrollToEl(el) {
+        if (!el) return;
+        const top =
+          el.getBoundingClientRect().top + window.scrollY - navHeight - 16;
+        window.scrollTo({ top, behavior: "smooth" });
+      }
 
       if (txt === "Italia" || txt === "Mappe") {
         e.preventDefault();
-        mapEl.scrollIntoView({ behavior: "smooth" });
-        setTimeout(() => italiaMap.flyTo([42.5, 12.5], 5), 400);
+        scrollToEl(document.getElementById("map-heading").closest("section"));
+        setTimeout(() => italiaMap && italiaMap.flyTo([42.5, 12.5], 5), 400);
       } else if (txt === "Europa") {
         e.preventDefault();
-        mapEl.scrollIntoView({ behavior: "smooth" });
-        setTimeout(() => italiaMap.flyTo([54.0, 15.0], 4), 400);
+        scrollToEl(document.getElementById("map-heading").closest("section"));
+        setTimeout(() => italiaMap && italiaMap.flyTo([54.0, 15.0], 4), 400);
       } else if (txt === "Mondo") {
         e.preventDefault();
-        mapEl.scrollIntoView({ behavior: "smooth" });
-        setTimeout(() => italiaMap.flyTo([20.0, 0.0], 2), 400);
+        scrollToEl(document.getElementById("map-heading").closest("section"));
+        setTimeout(() => italiaMap && italiaMap.flyTo([20.0, 0.0], 2), 400);
       } else if (txt === "Radar") {
         e.preventDefault();
-        mapEl.scrollIntoView({ behavior: "smooth" });
+        scrollToEl(document.getElementById("map-heading").closest("section"));
       } else if (txt === "Allerte") {
         e.preventDefault();
         const allerteSection = document.getElementById("allerte");
-        const isItaly = state.selectedLocation?.country_code === "IT";
         if (allerteSection && !allerteSection.hidden) {
-          allerteSection.scrollIntoView({ behavior: "smooth" });
+          scrollToEl(allerteSection);
         } else {
           window.scrollTo({ top: 0, behavior: "smooth" });
           setTimeout(
