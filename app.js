@@ -26,6 +26,8 @@ const state = {
   activeService: "forecast",
   menuOpen: false,
   abortController: null,
+  liveRefreshTimer: null,
+  hourAlignTimer: null,
 };
 
 const dom = {
@@ -265,6 +267,7 @@ async function loadWeatherData(loc) {
     state.selectedDayIdx = 0;
     state.activeService = "forecast";
     renderAll(weather, marine, loc, 0);
+    startLiveAutoRefresh();
   } catch (err) {
     console.error("MeteoPunto – Errore:", err);
     dom.liveWeatherCard.innerHTML = `
@@ -273,6 +276,52 @@ async function loadWeatherData(loc) {
         <p>Errore nel caricamento. Riprova tra poco.</p>
       </div>`;
   }
+}
+
+/**
+ * Ricarica i dati meteo in background, senza mostrare lo spinner di
+ * caricamento, per non "sfarfallare" la scheda mentre l'utente la guarda.
+ * Mantiene il giorno/servizio attualmente selezionato dall'utente.
+ */
+async function silentRefreshWeather() {
+  if (!state.selectedLocation) return;
+  try {
+    const [weather, marine] = await Promise.all([
+      fetchWeather(state.selectedLocation),
+      fetchMarine(state.selectedLocation),
+    ]);
+    state.weatherData = weather;
+    state.marineData = marine;
+    renderAll(weather, marine, state.selectedLocation, state.selectedDayIdx);
+  } catch (err) {
+    // Aggiornamento silenzioso: in caso di errore teniamo semplicemente
+    // gli ultimi dati validi mostrati, senza disturbare l'utente.
+    console.error("MeteoPunto – Errore refresh live:", err);
+  }
+}
+
+/**
+ * Avvia l'auto-refresh della scheda LIVE:
+ * - ogni 15 minuti aggiorna temperatura/umidità/vento con i dati "current" reali
+ * - allo scoccare di ogni ora forza un refresh esatto (cambio icona giorno/notte,
+ *   badge "ORA" nella timeline, fascia oraria)
+ * Va richiamata ad ogni nuova ricerca/geolocalizzazione per ripartire pulita.
+ */
+function startLiveAutoRefresh() {
+  if (state.liveRefreshTimer) clearInterval(state.liveRefreshTimer);
+  if (state.hourAlignTimer) clearTimeout(state.hourAlignTimer);
+
+  state.liveRefreshTimer = setInterval(silentRefreshWeather, 15 * 60 * 1000);
+
+  const now = new Date();
+  const msToNextHour =
+    (60 - now.getMinutes()) * 60 * 1000 -
+    now.getSeconds() * 1000 -
+    now.getMilliseconds();
+  state.hourAlignTimer = setTimeout(() => {
+    silentRefreshWeather();
+    state.hourAlignTimer = setInterval(silentRefreshWeather, 60 * 60 * 1000);
+  }, msToNextHour);
 }
 
 function renderAll(weather, marine, loc, dayIdx) {
@@ -845,6 +894,15 @@ dom.mobileMenu.querySelectorAll(".nav-link").forEach((link) => {
     dom.mobileMenu.classList.remove("open");
     dom.mobileMenu.setAttribute("aria-hidden", true);
   });
+});
+
+// Quando l'utente torna su questa scheda del browser (dopo averla lasciata
+// in background), forziamo subito un refresh: così i dati LIVE non sono mai
+// vecchi quando l'utente li guarda di nuovo.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && state.selectedLocation) {
+    silentRefreshWeather();
+  }
 });
 
 /* ═══════════════════════════════════════
