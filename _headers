@@ -1,0 +1,23 @@
+/app.js
+  Cache-Control: public, max-age=86400, must-revalidate
+
+/style.css
+  Cache-Control: public, max-age=86400, must-revalidate
+
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/*.png
+  Cache-Control: public, max-age=604800, must-revalidate
+
+/*.jpg
+  Cache-Control: public, max-age=604800, must-revalidate
+
+/*.svg
+  Cache-Control: public, max-age=604800, must-revalidate
+
+/*.ico
+  Cache-Control: public, max-age=604800, must-revalidate
