@@ -231,7 +231,21 @@ async function fetchWeather(loc) {
   });
   const res = await fetch(`${CONFIG.METEO_URL}?${params}`);
   if (!res.ok) throw new Error("Errore API meteo: " + res.status);
-  return res.json();
+  const data = await res.json();
+  // Normalizza: usa current se disponibile, altrimenti costruiscilo da current_weather
+  if (!data.current && data.current_weather) {
+    data.current = {
+      temperature_2m: data.current_weather.temperature,
+      weather_code: data.current_weather.weathercode,
+      wind_speed_10m: data.current_weather.windspeed,
+      wind_direction_10m: data.current_weather.winddirection,
+      apparent_temperature: data.current_weather.temperature,
+      relative_humidity_2m: null,
+      cloud_cover: null,
+      precipitation: 0,
+    };
+  }
+  return data;
 }
 
 async function fetchMarine(loc) {
@@ -377,7 +391,6 @@ function renderLiveWeather(weather, loc, dayIdx) {
     cloudCov,
     condLabel,
     condIcon;
-  console.log("cur:", cur, "isToday:", isToday);
   if (isToday && cur) {
     temp = Math.round(cur.temperature_2m);
     feelsLike = Math.round(cur.apparent_temperature);
