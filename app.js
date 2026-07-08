@@ -1096,7 +1096,7 @@ function createMarker(cap, temp, code) {
       <div style="font-weight:700;font-size:1rem">${cap.name}</div>
       <div style="font-size:1.2rem;font-weight:700;color:#00a8e8">${temp}°C</div>
       <div style="font-size:0.75rem;color:#666;margin-top:4px">${popupCond.label}</div>
-      <button onclick="window._mapSelectCity('${cap.name}')" style="
+      <button onclick="window._mapSelectCity(this.dataset.city)" data-city="${cap.name}" style="
         margin-top:8px;background:#00a8e8;color:#fff;border:none;
         border-radius:12px;padding:5px 14px;font-size:0.78rem;
         font-weight:600;cursor:pointer;width:100%;
