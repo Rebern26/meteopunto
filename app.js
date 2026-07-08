@@ -118,7 +118,6 @@ function highlightMatch(text, query) {
 }
 
 function wmoToCondition(code, hour) {
-  // Se non specificata, usa l'ora corrente
   const h = hour !== undefined ? hour : new Date().getHours();
   const isNight = h >= 21 || h < 6;
 
@@ -211,7 +210,7 @@ async function fetchWeather(loc) {
       "windspeed_10m",
       "winddirection_10m",
       "uv_index",
-      "relativehumidity_2m",
+      "relative_humidity_2m",
       "cloud_cover",
       "precipitation_probability",
     ].join(","),
@@ -232,7 +231,6 @@ async function fetchWeather(loc) {
   const res = await fetch(`${CONFIG.METEO_URL}?${params}`);
   if (!res.ok) throw new Error("Errore API meteo: " + res.status);
   const data = await res.json();
-  // Normalizza: usa current se disponibile, altrimenti costruiscilo da current_weather
   if (!data.current && data.current_weather) {
     data.current = {
       temperature_2m: data.current_weather.temperature,
@@ -394,7 +392,13 @@ function renderLiveWeather(weather, loc, dayIdx) {
   if (isToday && cur) {
     temp = Math.round(cur.temperature_2m);
     feelsLike = Math.round(cur.apparent_temperature);
-    humidity = Math.round(cur.relative_humidity_2m);
+    // FIX: se current.relative_humidity_2m è null, leggi dall'array orario
+    humidity =
+      cur.relative_humidity_2m != null
+        ? Math.round(cur.relative_humidity_2m)
+        : Math.round(
+            weather.hourly.relative_humidity_2m[new Date().getHours()] ?? 0,
+          );
     windSpeed = Math.round(cur.wind_speed_10m);
     windDir = degToDir(cur.wind_direction_10m);
     precip = cur.precipitation ?? 0;
@@ -407,7 +411,7 @@ function renderLiveWeather(weather, loc, dayIdx) {
     const hIdx = dayIdx * 24 + 12;
     temp = Math.round(weather.hourly.temperature_2m[hIdx]);
     feelsLike = Math.round(weather.hourly.apparent_temperature[hIdx]);
-    humidity = Math.round(weather.hourly.relativehumidity_2m[hIdx]);
+    humidity = Math.round(weather.hourly.relative_humidity_2m[hIdx]);
     windSpeed = Math.round(weather.hourly.windspeed_10m[hIdx]);
     windDir = degToDir(weather.hourly.winddirection_10m[hIdx]);
     precip = 0;
@@ -553,7 +557,7 @@ function renderServiceForecast(weather, dayIdx) {
   const cols = FASCE_LABEL.map((f) => {
     const hIdx = dayIdx * 24 + f.midHour;
     const cond = wmoToCondition(weather.hourly.weathercode[hIdx]);
-    const humidity = weather.hourly.relativehumidity_2m[hIdx];
+    const humidity = weather.hourly.relative_humidity_2m[hIdx];
     return `
       <div class="sp-col">
         <div class="sp-col-header">${f.icon} ${f.label} <span style="font-weight:400;margin-left:auto">${String(f.midHour).padStart(2, "0")}:00</span></div>
@@ -1121,20 +1125,14 @@ function createStaticMarker(city) {
 
   const marker = L.marker([city.lat, city.lon], { icon });
 
-  // Tooltip al passaggio del mouse
   marker.bindTooltip(
     `<div style="text-align:center;padding:2px 6px;font-size:0.78rem;font-weight:600;">
     ${city.name}<br>
     <span style="color:#00a8e8;font-size:0.72rem;">Clicca per le previsioni</span>
   </div>`,
-    {
-      direction: "top",
-      offset: [0, -10],
-      permanent: false,
-    },
+    { direction: "top", offset: [0, -10], permanent: false },
   );
 
-  // Click per caricare le previsioni
   marker.on("click", () => window._mapSelectCity(city.name));
 
   return marker;
@@ -1173,11 +1171,9 @@ function buildStaticMarkers() {
 }
 
 function applyZoomVisibility(zoom) {
-  // Rimuovi tutti
   [...mapMarkers, ...mapMarkersEU, ...mapMarkersMondo].forEach((m) => {
     if (italiaMap.hasLayer(m)) italiaMap.removeLayer(m);
   });
-
   if (zoom >= 5) {
     mapMarkers.forEach((m) => m.addTo(italiaMap));
   } else if (zoom === 4) {
@@ -1233,12 +1229,10 @@ function initMap() {
   buildStaticMarkers();
   updateMapMarkers(0);
 
-  // Zoom anti-caos
   italiaMap.on("zoomend", () => {
     applyZoomVisibility(italiaMap.getZoom());
   });
 
-  // Timeline pulsanti
   document.querySelectorAll(".map-day-btn").forEach((btn) => {
     btn.addEventListener("click", function () {
       document
@@ -1249,11 +1243,9 @@ function initMap() {
     });
   });
 
-  // Menu navbar → sposta mappa
   document.querySelectorAll(".nav-link").forEach((link) => {
     link.addEventListener("click", function (e) {
       const txt = this.textContent.trim();
-      const mapEl = document.getElementById("italia-map");
       const navHeight =
         document.querySelector(".site-header")?.offsetHeight || 64;
 
@@ -1299,7 +1291,6 @@ function initMap() {
   });
 }
 
-// Inizializza mappa dopo caricamento pagina
 document.addEventListener("DOMContentLoaded", () => {
   setTimeout(initMap, 800);
 });
