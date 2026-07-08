@@ -1106,6 +1106,15 @@ function createMarker(cap, temp, code) {
     { maxWidth: 160 },
   );
 
+  marker.bindTooltip(
+    `<div style="text-align:center;padding:2px 6px;font-size:0.78rem;font-weight:600;">${cap.name}<br><span style="color:#00a8e8;font-size:0.72rem;">Clicca per le previsioni</span></div>`,
+    {
+      direction: "top",
+      offset: [0, -10],
+      permanent: false,
+    },
+  );
+
   return marker;
 }
 
