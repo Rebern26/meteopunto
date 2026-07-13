@@ -445,9 +445,39 @@ function renderLiveWeather(weather, loc, dayIdx) {
     condIcon = c.icon;
     condLabel = c.label;
   }
+  let liveBadgeLabel = "📅 Previsione";
+  if (dayIdx === 1) {
+    liveBadgeLabel = "📅 Domani";
+  } else if (dayIdx > 1) {
+    const d = new Date(weather.daily.time[dayIdx]);
+    const giorniEstesi = [
+      "Domenica",
+      "Lunedì",
+      "Martedì",
+      "Mercoledì",
+      "Giovedì",
+      "Venerdì",
+      "Sabato",
+    ];
+    const mesiEstesi = [
+      "Gennaio",
+      "Febbraio",
+      "Marzo",
+      "Aprile",
+      "Maggio",
+      "Giugno",
+      "Luglio",
+      "Agosto",
+      "Settembre",
+      "Ottobre",
+      "Novembre",
+      "Dicembre",
+    ];
+    liveBadgeLabel = `📅 ${giorniEstesi[d.getDay()]} ${d.getDate()} ${mesiEstesi[d.getMonth()]}`;
+  }
   const liveBadgeHTML = isToday
     ? `<div class="lw-badge"><span class="lw-badge-dot"></span>LIVE – Ora</div>`
-    : `<div class="lw-badge" style="background:rgba(255,255,255,0.1)">📅 Previsione</div>`;
+    : `<div class="lw-badge" style="background:rgba(255,255,255,0.1)">${liveBadgeLabel}</div>`;
   const precipHTML =
     isToday && precip > 0
       ? `<p class="lw-precip">🌧️ Precipitazione: ${precip.toFixed(1)} mm</p>`
