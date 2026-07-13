@@ -117,9 +117,23 @@ function highlightMatch(text, query) {
   return escaped.replace(re, "<mark>$1</mark>");
 }
 
-function wmoToCondition(code, hour) {
+// Restituisce true se l'ora è notturna basandosi su sunrise/sunset reali
+function isNightTime(hour, sunriseStr, sunsetStr) {
   const h = hour !== undefined ? hour : new Date().getHours();
-  const isNight = h >= 21 || h < 6;
+  if (!sunriseStr || !sunsetStr) return h >= 21 || h < 6;
+  const riseHour = new Date(sunriseStr).getHours();
+  const riseMin = new Date(sunriseStr).getMinutes();
+  const setHour = new Date(sunsetStr).getHours();
+  const setMin = new Date(sunsetStr).getMinutes();
+  const nowMins = h * 60 + new Date().getMinutes();
+  const riseMins = riseHour * 60 + riseMin;
+  const setMins = setHour * 60 + setMin;
+  return nowMins < riseMins || nowMins >= setMins;
+}
+
+function wmoToCondition(code, hour, sunriseStr, sunsetStr) {
+  const h = hour !== undefined ? hour : new Date().getHours();
+  const isNight = isNightTime(h, sunriseStr, sunsetStr);
 
   const map = {
     0: { label: "Cielo sereno", icon: isNight ? "🌙" : "☀️" },
@@ -307,7 +321,9 @@ function renderDayTabs(weather, selectedIdx) {
   dom.dayTabs.innerHTML = "";
   weather.daily.time.forEach((dateStr, idx) => {
     const { name, date } = formatDayLabel(dateStr, idx);
-    const cond = wmoToCondition(weather.daily.weathercode[idx]);
+    const srDT = weather.daily.sunrise?.[idx] ?? null;
+    const ssDT = weather.daily.sunset?.[idx] ?? null;
+    const cond = wmoToCondition(weather.daily.weathercode[idx], 12, srDT, ssDT);
     const tMax = Math.round(weather.daily.temperature_2m_max[idx]);
     const tMin = Math.round(weather.daily.temperature_2m_min[idx]);
     const btn = document.createElement("button");
@@ -403,7 +419,14 @@ function renderLiveWeather(weather, loc, dayIdx) {
     windDir = degToDir(cur.wind_direction_10m);
     precip = cur.precipitation ?? 0;
     cloudCov = cur.cloud_cover ?? 0;
-    let baseCond = wmoToCondition(cur.weather_code ?? cw.weathercode);
+    const sr = weather.daily.sunrise?.[0] ?? null;
+    const ss = weather.daily.sunset?.[0] ?? null;
+    let baseCond = wmoToCondition(
+      cur.weather_code ?? cw.weathercode,
+      new Date().getHours(),
+      sr,
+      ss,
+    );
     const nowcasted = applyNowcasting(cur, baseCond);
     condIcon = nowcasted.icon;
     condLabel = nowcasted.label;
@@ -416,7 +439,9 @@ function renderLiveWeather(weather, loc, dayIdx) {
     windDir = degToDir(weather.hourly.winddirection_10m[hIdx]);
     precip = 0;
     cloudCov = weather.hourly.cloud_cover?.[hIdx] ?? 0;
-    const c = wmoToCondition(weather.hourly.weathercode[hIdx]);
+    const srF = weather.daily.sunrise?.[dayIdx] ?? null;
+    const ssF = weather.daily.sunset?.[dayIdx] ?? null;
+    const c = wmoToCondition(weather.hourly.weathercode[hIdx], 12, srF, ssF);
     condIcon = c.icon;
     condLabel = c.label;
   }
@@ -462,9 +487,16 @@ function renderHourlyTimeline(weather, dayIdx) {
   const nowHour = new Date().getHours();
   const baseIdx = dayIdx * 24;
   const precipProb = weather.hourly.precipitation_probability || [];
+  const sunriseStr = weather.daily.sunrise?.[dayIdx] ?? null;
+  const sunsetStr = weather.daily.sunset?.[dayIdx] ?? null;
   for (let h = 0; h < 24; h++) {
     const idx = baseIdx + h;
-    const cond = wmoToCondition(weather.hourly.weathercode[idx], h);
+    const cond = wmoToCondition(
+      weather.hourly.weathercode[idx],
+      h,
+      sunriseStr,
+      sunsetStr,
+    );
     const temp = Math.round(weather.hourly.temperature_2m[idx]);
     const prob = precipProb[idx] ?? 0;
     const isNow = isToday && h === nowHour;
@@ -556,7 +588,14 @@ const FASCE_LABEL = [
 function renderServiceForecast(weather, dayIdx) {
   const cols = FASCE_LABEL.map((f) => {
     const hIdx = dayIdx * 24 + f.midHour;
-    const cond = wmoToCondition(weather.hourly.weathercode[hIdx]);
+    const srFC = weather.daily.sunrise?.[dayIdx] ?? null;
+    const ssFC = weather.daily.sunset?.[dayIdx] ?? null;
+    const cond = wmoToCondition(
+      weather.hourly.weathercode[hIdx],
+      f.midHour,
+      srFC,
+      ssFC,
+    );
     const humidity = weather.hourly.relative_humidity_2m[hIdx];
     return `
       <div class="sp-col">
