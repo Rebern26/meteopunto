@@ -452,9 +452,39 @@ function renderLiveWeather(weather, loc, dayIdx) {
   let liveBadgeHTML;
   if (state.selectedHour !== null) {
     const hLabel = String(state.selectedHour).padStart(2, "0") + ":00";
+    const giorniEstesi = [
+      "Domenica",
+      "Lunedì",
+      "Martedì",
+      "Mercoledì",
+      "Giovedì",
+      "Venerdì",
+      "Sabato",
+    ];
+    const mesiEstesi = [
+      "Gennaio",
+      "Febbraio",
+      "Marzo",
+      "Aprile",
+      "Maggio",
+      "Giugno",
+      "Luglio",
+      "Agosto",
+      "Settembre",
+      "Ottobre",
+      "Novembre",
+      "Dicembre",
+    ];
+    let dayLabel;
+    if (dayIdx === 0) dayLabel = "Oggi";
+    else if (dayIdx === 1) dayLabel = "Domani";
+    else {
+      const d = new Date(weather.daily.time[dayIdx]);
+      dayLabel = `${giorniEstesi[d.getDay()]} ${d.getDate()} ${mesiEstesi[d.getMonth()]}`;
+    }
     liveBadgeHTML = `
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-        <div class="lw-badge" style="background:rgba(255,255,255,0.15)">🕐 Dettaglio ${hLabel}</div>
+        <div class="lw-badge" style="background:rgba(255,255,255,0.15)">🕐 ${dayLabel}, ${hLabel}</div>
         <button onclick="window._resetLiveCard()" style="
           background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.3);
           color:rgba(255,255,255,0.85);border-radius:20px;padding:3px 12px;
