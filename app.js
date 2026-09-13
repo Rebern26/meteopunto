@@ -26,6 +26,7 @@ const state = {
   activeService: "forecast",
   menuOpen: false,
   abortController: null,
+  selectedHour: null, // null = live, numero = ora selezionata
 };
 
 const dom = {
@@ -117,7 +118,6 @@ function highlightMatch(text, query) {
   return escaped.replace(re, "<mark>$1</mark>");
 }
 
-// Restituisce true se l'ora è notturna basandosi su sunrise/sunset reali
 function isNightTime(hour, sunriseStr, sunsetStr) {
   const h = hour !== undefined ? hour : new Date().getHours();
   if (!sunriseStr || !sunsetStr) return h >= 21 || h < 6;
@@ -289,6 +289,7 @@ async function loadWeatherData(loc) {
     state.weatherData = weather;
     state.marineData = marine;
     state.selectedDayIdx = 0;
+    state.selectedHour = null;
     state.activeService = "forecast";
     renderAll(weather, marine, loc, 0);
   } catch (err) {
@@ -338,6 +339,7 @@ function renderDayTabs(weather, selectedIdx) {
       <span class="day-tab-temp">${tMax}° / ${tMin}°</span>`;
     btn.addEventListener("click", () => {
       state.selectedDayIdx = idx;
+      state.selectedHour = null; // reset ora selezionata al cambio giorno
       dom.dayTabs.querySelectorAll(".day-tab").forEach((b, i) => {
         b.classList.toggle("active", i === idx);
         b.setAttribute("aria-selected", i === idx);
@@ -405,10 +407,9 @@ function renderLiveWeather(weather, loc, dayIdx) {
     cloudCov,
     condLabel,
     condIcon;
-  if (isToday && cur) {
+  if (isToday && cur && state.selectedHour === null) {
     temp = Math.round(cur.temperature_2m);
     feelsLike = Math.round(cur.apparent_temperature);
-    // FIX: se current.relative_humidity_2m è null, leggi dall'array orario
     humidity =
       cur.relative_humidity_2m != null
         ? Math.round(cur.relative_humidity_2m)
@@ -431,7 +432,8 @@ function renderLiveWeather(weather, loc, dayIdx) {
     condIcon = nowcasted.icon;
     condLabel = nowcasted.label;
   } else {
-    const hIdx = dayIdx * 24 + 12;
+    const h = state.selectedHour !== null ? state.selectedHour : 12;
+    const hIdx = dayIdx * 24 + h;
     temp = Math.round(weather.hourly.temperature_2m[hIdx]);
     feelsLike = Math.round(weather.hourly.apparent_temperature[hIdx]);
     humidity = Math.round(weather.hourly.relative_humidity_2m[hIdx]);
@@ -441,51 +443,93 @@ function renderLiveWeather(weather, loc, dayIdx) {
     cloudCov = weather.hourly.cloud_cover?.[hIdx] ?? 0;
     const srF = weather.daily.sunrise?.[dayIdx] ?? null;
     const ssF = weather.daily.sunset?.[dayIdx] ?? null;
-    const c = wmoToCondition(weather.hourly.weathercode[hIdx], 12, srF, ssF);
+    const c = wmoToCondition(weather.hourly.weathercode[hIdx], h, srF, ssF);
     condIcon = c.icon;
     condLabel = c.label;
   }
-  let liveBadgeLabel = "📅 Previsione";
-  if (dayIdx === 1) {
-    liveBadgeLabel = "📅 Domani";
-  } else if (dayIdx > 1) {
-    const d = new Date(weather.daily.time[dayIdx]);
-    const giorniEstesi = [
-      "Domenica",
-      "Lunedì",
-      "Martedì",
-      "Mercoledì",
-      "Giovedì",
-      "Venerdì",
-      "Sabato",
-    ];
-    const mesiEstesi = [
-      "Gennaio",
-      "Febbraio",
-      "Marzo",
-      "Aprile",
-      "Maggio",
-      "Giugno",
-      "Luglio",
-      "Agosto",
-      "Settembre",
-      "Ottobre",
-      "Novembre",
-      "Dicembre",
-    ];
-    liveBadgeLabel = `📅 ${giorniEstesi[d.getDay()]} ${d.getDate()} ${mesiEstesi[d.getMonth()]}`;
+
+  // Badge: LIVE, ora selezionata, o giorno futuro
+  let liveBadgeHTML;
+  if (state.selectedHour !== null) {
+    const hLabel = String(state.selectedHour).padStart(2, "0") + ":00";
+    liveBadgeHTML = `
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div class="lw-badge" style="background:rgba(255,255,255,0.15)">🕐 Dettaglio ${hLabel}</div>
+        <button onclick="window._resetLiveCard()" style="
+          background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.3);
+          color:rgba(255,255,255,0.85);border-radius:20px;padding:3px 12px;
+          font-size:0.75rem;cursor:pointer;font-weight:600;white-space:nowrap;
+        ">← Live</button>
+      </div>`;
+  } else if (!isToday) {
+    let liveBadgeLabel = "📅 Previsione";
+    if (dayIdx === 1) {
+      liveBadgeLabel = "📅 Domani";
+    } else if (dayIdx > 1) {
+      const d = new Date(weather.daily.time[dayIdx]);
+      const giorniEstesi = [
+        "Domenica",
+        "Lunedì",
+        "Martedì",
+        "Mercoledì",
+        "Giovedì",
+        "Venerdì",
+        "Sabato",
+      ];
+      const mesiEstesi = [
+        "Gennaio",
+        "Febbraio",
+        "Marzo",
+        "Aprile",
+        "Maggio",
+        "Giugno",
+        "Luglio",
+        "Agosto",
+        "Settembre",
+        "Ottobre",
+        "Novembre",
+        "Dicembre",
+      ];
+      liveBadgeLabel = `📅 ${giorniEstesi[d.getDay()]} ${d.getDate()} ${mesiEstesi[d.getMonth()]}`;
+    }
+    liveBadgeHTML = `<div class="lw-badge" style="background:rgba(255,255,255,0.1)">${liveBadgeLabel}</div>`;
+  } else {
+    liveBadgeHTML = `<div class="lw-badge"><span class="lw-badge-dot"></span>LIVE – Ora</div>`;
   }
-  const liveBadgeHTML = isToday
-    ? `<div class="lw-badge"><span class="lw-badge-dot"></span>LIVE – Ora</div>`
-    : `<div class="lw-badge" style="background:rgba(255,255,255,0.1)">${liveBadgeLabel}</div>`;
+
   const precipHTML =
-    isToday && precip > 0
+    isToday && state.selectedHour === null && precip > 0
       ? `<p class="lw-precip">🌧️ Precipitazione: ${precip.toFixed(1)} mm</p>`
       : "";
   const cloudHTML =
     cloudCov > 0 ? `<p class="lw-cloud">☁️ Nuvolosità: ${cloudCov}%</p>` : "";
   const tMax = Math.round(weather.daily.temperature_2m_max[dayIdx]);
   const tMin = Math.round(weather.daily.temperature_2m_min[dayIdx]);
+
+  // UV per l'ora selezionata
+  const h =
+    state.selectedHour !== null
+      ? state.selectedHour
+      : isToday
+        ? new Date().getHours()
+        : 12;
+  const hIdxUV = dayIdx * 24 + h;
+  const uvVal = weather.hourly.uv_index?.[hIdxUV];
+  const uvRound = uvVal != null ? Math.round(uvVal) : null;
+  const uvMt = uvRound != null ? uvMeta(uvRound) : null;
+  const uvHTML =
+    uvRound != null
+      ? `<div class="lw-stat"><span class="lw-stat-icon">🔆</span><span class="lw-stat-label">UV</span><span class="lw-stat-value" style="color:${uvMt.color}">${uvRound} – ${uvMt.label}</span></div>`
+      : "";
+
+  // Prob pioggia per l'ora selezionata
+  const probPioggia =
+    weather.hourly.precipitation_probability?.[hIdxUV] ?? null;
+  const probHTML =
+    probPioggia !== null
+      ? `<div class="lw-stat"><span class="lw-stat-icon">🌧️</span><span class="lw-stat-label">Prob. pioggia</span><span class="lw-stat-value">${probPioggia}%</span></div>`
+      : "";
+
   dom.liveWeatherCard.innerHTML = `
     <div class="lw-layout">
       <div class="lw-main">
@@ -504,10 +548,25 @@ function renderLiveWeather(weather, loc, dayIdx) {
         <div class="lw-stat"><span class="lw-stat-icon">💧</span><span class="lw-stat-label">Umidità</span><span class="lw-stat-value">${humidity}%</span></div>
         <div class="lw-stat"><span class="lw-stat-icon">💨</span><span class="lw-stat-label">Vento</span><span class="lw-stat-value">${windSpeed} km/h ${windDir}</span></div>
         <div class="lw-stat"><span class="lw-stat-icon">🌡️</span><span class="lw-stat-label">Max / Min</span><span class="lw-stat-value">${tMax}° / ${tMin}°</span></div>
-        <div class="lw-stat"><span class="lw-stat-icon">☀️</span><span class="lw-stat-label">UV Max</span><span class="lw-stat-value">${weather.daily.uv_index_max[dayIdx]}</span></div>
+        ${uvHTML}
+        ${probHTML}
       </div>
     </div>`;
 }
+
+// Reset alla vista LIVE dalla live card
+window._resetLiveCard = function () {
+  state.selectedHour = null;
+  // deseleziona tutte le card orarie
+  dom.hourlyContainer
+    .querySelectorAll(".hc-card")
+    .forEach((c) => c.classList.remove("hc-selected"));
+  renderLiveWeather(
+    state.weatherData,
+    state.selectedLocation,
+    state.selectedDayIdx,
+  );
+};
 
 function renderHourlyTimeline(weather, dayIdx) {
   const container = dom.hourlyContainer;
@@ -519,6 +578,7 @@ function renderHourlyTimeline(weather, dayIdx) {
   const precipProb = weather.hourly.precipitation_probability || [];
   const sunriseStr = weather.daily.sunrise?.[dayIdx] ?? null;
   const sunsetStr = weather.daily.sunset?.[dayIdx] ?? null;
+
   for (let h = 0; h < 24; h++) {
     const idx = baseIdx + h;
     const cond = wmoToCondition(
@@ -530,17 +590,51 @@ function renderHourlyTimeline(weather, dayIdx) {
     const temp = Math.round(weather.hourly.temperature_2m[idx]);
     const prob = precipProb[idx] ?? 0;
     const isNow = isToday && h === nowHour;
+    const isSelected = state.selectedHour === h;
+
     const card = document.createElement("div");
-    card.className = "hc-card" + (isNow ? " hc-now" : "");
+    card.className =
+      "hc-card" + (isNow ? " hc-now" : "") + (isSelected ? " hc-selected" : "");
+    card.setAttribute("role", "button");
+    card.setAttribute("tabindex", "0");
+    card.setAttribute(
+      "aria-label",
+      `Dettaglio ore ${String(h).padStart(2, "0")}:00`,
+    );
     card.innerHTML = `
       ${isNow ? '<span class="hc-now-badge">ORA</span>' : ""}
       <span class="hc-hour">${String(h).padStart(2, "0")}:00</span>
       <span class="hc-icon" aria-hidden="true">${cond.icon}</span>
       <span class="hc-temp">${temp}°</span>
       ${prob > 0 ? `<span class="hc-precip">💧 ${prob}%</span>` : ""}`;
+
+    // Click: seleziona ora e aggiorna live card
+    const selectHour = () => {
+      state.selectedHour = h;
+      // aggiorna stile selected su tutte le card
+      container
+        .querySelectorAll(".hc-card")
+        .forEach((c) => c.classList.remove("hc-selected"));
+      card.classList.add("hc-selected");
+      renderLiveWeather(
+        state.weatherData,
+        state.selectedLocation,
+        state.selectedDayIdx,
+      );
+    };
+
+    card.addEventListener("click", selectHour);
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        selectHour();
+      }
+    });
+
     container.appendChild(card);
   }
-  if (isToday) {
+
+  if (isToday && state.selectedHour === null) {
     setTimeout(() => {
       const nowCard = container.querySelector(".hc-now");
       if (nowCard)
@@ -550,6 +644,33 @@ function renderHourlyTimeline(weather, dayIdx) {
           inline: "center",
         });
     }, 150);
+  }
+
+  // Inietta stile hc-selected se non già presente
+  if (!document.getElementById("hc-selected-css")) {
+    const s = document.createElement("style");
+    s.id = "hc-selected-css";
+    s.textContent = `
+      .hc-card {
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease, outline 0.1s ease;
+      }
+      .hc-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+      }
+      .hc-card.hc-selected {
+        outline: 2px solid var(--color-sky, #00A8E8);
+        outline-offset: 2px;
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(0,168,232,0.25);
+      }
+      .hc-card:focus-visible {
+        outline: 2px solid var(--color-sky, #00A8E8);
+        outline-offset: 2px;
+      }
+    `;
+    document.head.appendChild(s);
   }
 }
 
@@ -847,8 +968,7 @@ function selectLocation(result) {
 function updateAllerteVisibility(countryCode) {
   const allerteSection = document.getElementById("allerte");
   if (!allerteSection) return;
-  const isItaly = countryCode === "IT";
-  allerteSection.hidden = !isItaly;
+  allerteSection.hidden = countryCode !== "IT";
 }
 
 function injectAutocompleteCSS() {
@@ -1156,7 +1276,6 @@ function createMarker(cap, temp, code) {
   });
 
   const marker = L.marker([cap.lat, cap.lon], { icon });
-
   const popupCond = wmoToCondition(code);
   marker.bindPopup(
     `
@@ -1177,11 +1296,7 @@ function createMarker(cap, temp, code) {
 
   marker.bindTooltip(
     `<div style="text-align:center;padding:2px 6px;font-size:0.78rem;font-weight:600;">${cap.name}<br><span style="color:#00a8e8;font-size:0.72rem;">Clicca per le previsioni</span></div>`,
-    {
-      direction: "top",
-      offset: [0, -10],
-      permanent: false,
-    },
+    { direction: "top", offset: [0, -10], permanent: false },
   );
 
   return marker;
@@ -1202,17 +1317,11 @@ function createStaticMarker(city) {
   });
 
   const marker = L.marker([city.lat, city.lon], { icon });
-
   marker.bindTooltip(
-    `<div style="text-align:center;padding:2px 6px;font-size:0.78rem;font-weight:600;">
-    ${city.name}<br>
-    <span style="color:#00a8e8;font-size:0.72rem;">Clicca per le previsioni</span>
-  </div>`,
+    `<div style="text-align:center;padding:2px 6px;font-size:0.78rem;font-weight:600;">${city.name}<br><span style="color:#00a8e8;font-size:0.72rem;">Clicca per le previsioni</span></div>`,
     { direction: "top", offset: [0, -10], permanent: false },
   );
-
   marker.on("click", () => window._mapSelectCity(city.name));
-
   return marker;
 }
 
@@ -1379,17 +1488,14 @@ document.addEventListener("DOMContentLoaded", () => {
 (function initCookieBanner() {
   const banner = document.getElementById("cookie-banner");
   if (!banner) return;
-
   const consent = localStorage.getItem("mp_cookie_consent");
   if (!consent) {
     banner.hidden = false;
   }
-
   document.getElementById("cookie-accept").addEventListener("click", () => {
     localStorage.setItem("mp_cookie_consent", "accepted");
     banner.hidden = true;
   });
-
   document.getElementById("cookie-reject").addEventListener("click", () => {
     localStorage.setItem("mp_cookie_consent", "rejected");
     banner.hidden = true;
